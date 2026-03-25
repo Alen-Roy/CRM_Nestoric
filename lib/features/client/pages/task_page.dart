@@ -91,6 +91,18 @@ class _TaskPageState extends State<TaskPage> {
                   },
                 ),
               ),
+              SizedBox(height: 10),
+              Text(
+                selectedIndex == 0
+                    ? "Today"
+                    : DateFormat("EEEE").format(dates[selectedIndex]),
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Container(),
             ],
           ),
         ),
