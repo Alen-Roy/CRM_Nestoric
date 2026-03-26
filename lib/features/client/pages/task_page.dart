@@ -57,7 +57,9 @@ class _TaskPageState extends State<TaskPage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 16, bottom: 80),
         child: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            print(DateTime.now());
+          },
           backgroundColor: Colors.white12,
           child: const Icon(Icons.add, color: Colors.white),
         ),
@@ -100,6 +102,7 @@ class _TaskPageState extends State<TaskPage> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     return TaskCard(
+                      createdAt: _filteredTasks[index].createdAt,
                       task: _filteredTasks[index],
                       onToggle: () {
                         _onTaskToggle(index);

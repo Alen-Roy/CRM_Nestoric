@@ -4,8 +4,14 @@ import 'package:flutter/material.dart';
 class TaskCard extends StatelessWidget {
   final TaskModel task;
   final VoidCallback onToggle;
+  final DateTime createdAt;
 
-  const TaskCard({super.key, required this.task, required this.onToggle});
+  const TaskCard({
+    super.key,
+    required this.task,
+    required this.onToggle,
+    required this.createdAt,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +33,26 @@ class TaskCard extends StatelessWidget {
               color: task.isDone ? Colors.greenAccent : Colors.white54,
             ),
             const SizedBox(width: 10),
-            Text(
-              task.title,
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
+
               style: TextStyle(
                 color: task.isDone ? Colors.white30 : Colors.white60,
                 decoration: task.isDone
                     ? TextDecoration.lineThrough
                     : TextDecoration.none,
                 decorationColor: Colors.white30,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(task.title),
+                  Text(
+                    createdAt.hour.toString().padLeft(2, '0') +
+                        ":" +
+                        createdAt.minute.toString().padLeft(2, '0'),
+                  ),
+                ],
               ),
             ),
           ],
