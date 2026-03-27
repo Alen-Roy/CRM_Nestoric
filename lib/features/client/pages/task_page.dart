@@ -2,7 +2,6 @@ import 'package:crm/core/widgets/date_slider.dart';
 import 'package:crm/core/widgets/task_card.dart';
 import 'package:crm/models/task_model.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/date_time_patterns.dart';
 import 'package:intl/intl.dart';
 
 class TaskPage extends StatefulWidget {
@@ -102,6 +101,47 @@ class _TaskPageState extends State<TaskPage> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     return TaskCard(
+                      onDelete: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => Container(
+                            color: Colors.black54,
+                            child: AlertDialog(
+                              backgroundColor: const Color(0xFF1E1E1E),
+                              title: const Text(
+                                'Delete Task?',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              content: const Text(
+                                'Are you sure you want to delete this task?',
+                                style: TextStyle(color: Colors.white54),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(color: Colors.white54),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                    setState(
+                                      () =>
+                                          _tasks.remove(_filteredTasks[index]),
+                                    );
+                                  },
+                                  child: const Text(
+                                    'Delete',
+                                    style: TextStyle(color: Colors.redAccent),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
                       createdAt: _filteredTasks[index].createdAt,
                       task: _filteredTasks[index],
                       onToggle: () {
