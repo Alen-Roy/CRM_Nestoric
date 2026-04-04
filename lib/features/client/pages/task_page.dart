@@ -1,17 +1,20 @@
 import 'package:crm/core/widgets/date_slider.dart';
 import 'package:crm/core/widgets/task_card.dart';
+import 'package:crm/features/client/pages/task_add_page.dart';
 import 'package:crm/models/task_model.dart';
+import 'package:crm/viewmodels/task_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-class TaskPage extends StatefulWidget {
+class TaskPage extends ConsumerStatefulWidget {
   const TaskPage({super.key});
 
   @override
-  State<TaskPage> createState() => _TaskPageState();
+  ConsumerState<TaskPage> createState() => _TaskPageState();
 }
 
-class _TaskPageState extends State<TaskPage> {
+class _TaskPageState extends ConsumerState<TaskPage> {
   int _selectedIndex = 0;
   static final DateFormat _fullDayFormat = DateFormat('EEEE');
 
@@ -19,30 +22,22 @@ class _TaskPageState extends State<TaskPage> {
     60,
     (i) => DateTime.now().add(Duration(days: i)),
   );
-  List<TaskModel> get _filteredTasks {
+
+  List<TaskModel> _filteredTasks(List<TaskModel> tasks) {
     final selectedDate = _dates[_selectedIndex];
-    return _tasks.where((task) {
-      return task.createdAt.year == selectedDate.year &&
-          task.createdAt.month == selectedDate.month &&
-          task.createdAt.day == selectedDate.day;
+    return tasks.where((task) {
+      return task.scheduledAt.year == selectedDate.year &&
+          task.scheduledAt.month == selectedDate.month &&
+          task.scheduledAt.day == selectedDate.day;
     }).toList();
   }
-
-  final List<TaskModel> _tasks = [
-    TaskModel(title: 'Design the UI mockup', createdAt: DateTime.now()),
-    TaskModel(title: 'Fix login bug', createdAt: DateTime(2026, 3, 29)),
-    TaskModel(title: 'Write unit tests', createdAt: DateTime(2026, 3, 29)),
-    TaskModel(title: 'Review pull requests', createdAt: DateTime(2026, 3, 29)),
-  ];
 
   void _onDateSelected(int index) {
     setState(() => _selectedIndex = index);
   }
 
-  void _onTaskToggle(int index) {
-    setState(
-      () => _filteredTasks[index].isDone = !_filteredTasks[index].isDone,
-    );
+  void _onTaskToggle(TaskModel task) {
+    ref.read(tasksProvider.notifier).toggleTask(task);
   }
 
   String get _selectedDateLabel {
@@ -52,12 +47,24 @@ class _TaskPageState extends State<TaskPage> {
 
   @override
   Widget build(BuildContext context) {
+    final tasks = ref.watch(tasksProvider);
+    final filtered = _filteredTasks(tasks);
+
     return Scaffold(
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 16, bottom: 80),
         child: FloatingActionButton(
-          onPressed: () {
-            print(DateTime.now());
+          onPressed: () async {
+            final newTask = await Navigator.push<TaskModel>(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    TaskAddPage(selectedDate: _dates[_selectedIndex]),
+              ),
+            );
+            if (newTask != null) {
+              ref.read(tasksProvider.notifier).addTask(newTask);
+            }
           },
           backgroundColor: Colors.white12,
           child: const Icon(Icons.add, color: Colors.white),
@@ -71,8 +78,12 @@ class _TaskPageState extends State<TaskPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Task Page',
-                style: TextStyle(color: Colors.white, fontSize: 24),
+                'Tasks',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 10),
               DateSlider(
@@ -80,76 +91,76 @@ class _TaskPageState extends State<TaskPage> {
                 selectedIndex: _selectedIndex,
                 onDateSelected: _onDateSelected,
               ),
-
               const SizedBox(height: 15),
-
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 250),
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
                 child: Text(_selectedDateLabel),
               ),
-
               const SizedBox(height: 10),
-
               Expanded(
-                child: ListView.separated(
-                  itemCount: _filteredTasks.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    return TaskCard(
-                      onDelete: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => Container(
-                            color: Colors.black54,
-                            child: AlertDialog(
-                              backgroundColor: const Color(0xFF1E1E1E),
-                              title: const Text(
-                                'Delete Task?',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              content: const Text(
-                                'Are you sure you want to delete this task?',
-                                style: TextStyle(color: Colors.white54),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text(
-                                    'Cancel',
+                child: filtered.isEmpty
+                    ? const Center(
+                        child: Text(
+                          "No tasks for this day.",
+                          style: TextStyle(color: Colors.white30, fontSize: 16),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: filtered.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 8),
+                        itemBuilder: (context, index) {
+                          final task = filtered[index];
+                          return TaskCard(
+                            task: task,
+                            scheduledAt: task.scheduledAt,
+                            onToggle: () => _onTaskToggle(task),
+                            onDelete: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: const Color(0xFF1E1E1E),
+                                  title: const Text(
+                                    'Delete Task?',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                  content: const Text(
+                                    'Are you sure you want to delete this task?',
                                     style: TextStyle(color: Colors.white54),
                                   ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text(
+                                        'Cancel',
+                                        style: TextStyle(color: Colors.white54),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        ref
+                                            .read(tasksProvider.notifier)
+                                            .deleteTask(task);
+                                      },
+                                      child: const Text(
+                                        'Delete',
+                                        style: TextStyle(
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                    setState(
-                                      () =>
-                                          _tasks.remove(_filteredTasks[index]),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Delete',
-                                    style: TextStyle(color: Colors.redAccent),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                      createdAt: _filteredTasks[index].createdAt,
-                      task: _filteredTasks[index],
-                      onToggle: () {
-                        _onTaskToggle(index);
-                      },
-                    );
-                  },
-                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
               ),
             ],
           ),

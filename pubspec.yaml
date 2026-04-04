@@ -8,6 +8,7 @@ environment:
 
 dependencies:
   animated_custom_dropdown: ^3.1.1
+  fl_chart: ^0.70.2
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
@@ -15,6 +16,8 @@ dependencies:
   google_fonts: ^6.2.1
   intl: ^0.20.2
   material_symbols_icons: ^4.2906.0
+  firebase_core: ^4.6.0
+  firebase_auth: ^6.3.0
 
 dev_dependencies:
   flutter_test:

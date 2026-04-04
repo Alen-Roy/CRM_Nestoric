@@ -5,14 +5,14 @@ class TaskCard extends StatefulWidget {
   final TaskModel task;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
-  final DateTime createdAt;
+  final DateTime scheduledAt;
 
   const TaskCard({
     super.key,
     required this.task,
     required this.onToggle,
     required this.onDelete,
-    required this.createdAt,
+    required this.scheduledAt,
   });
 
   @override
@@ -105,9 +105,9 @@ class _TaskCardState extends State<TaskCard> {
                         Text(widget.task.title),
                         const Spacer(),
                         Text(
-                          widget.createdAt.hour.toString().padLeft(2, '0') +
+                          widget.scheduledAt.hour.toString().padLeft(2, '0') +
                               ":" +
-                              widget.createdAt.minute.toString().padLeft(
+                              widget.scheduledAt.minute.toString().padLeft(
                                 2,
                                 '0',
                               ),

@@ -1,15 +1,17 @@
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:crm/core/widgets/large_text_field.dart';
+import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NewLeadPage extends StatefulWidget {
+class NewLeadPage extends ConsumerStatefulWidget {
   const NewLeadPage({super.key});
 
   @override
-  State<NewLeadPage> createState() => _NewLeadPageState();
+  ConsumerState<NewLeadPage> createState() => _NewLeadPageState();
 }
 
-class _NewLeadPageState extends State<NewLeadPage> {
+class _NewLeadPageState extends ConsumerState<NewLeadPage> {
   final List leadData = [];
   List<Map<String, String>> get leads => leadData.cast<Map<String, String>>();
   final _companyNameController = TextEditingController();
@@ -57,18 +59,21 @@ class _NewLeadPageState extends State<NewLeadPage> {
     "📊 Exhibition",
   ];
   Future<void> _handleSave() async {
-    leadData.add({
+    ref.read(leadsProvider.notifier).addLead({
+      "name": _contactPersonController.text,
       "companyName": _companyNameController.text,
       "contactPerson": _contactPersonController.text,
       "city": _cityController.text,
       "phone": _phoneController.text,
       "email": _emailController.text,
-      "estimatedValue": _estimatedValueController.text,
+      "amount": _estimatedValueController.text,
       "notes": _notesController.text,
-      "services": _serviceController.value.join(", "),
+      "service": _serviceController.value.join(", "),
       "assignTo": _assignToController.value ?? "",
-      "source": _selectedSource ?? "",
-      "priority": _selectedPriority,
+      "leadSource": _selectedSource ?? "",
+      "priority": _selectedPriority.replaceAll(RegExp(r'[^\w\s]'), '').trim(),
+      "stage": "New",
+      "lastContacted": DateTime.now().toString().split(' ')[0],
     });
   }
 
@@ -402,7 +407,6 @@ class _NewLeadPageState extends State<NewLeadPage> {
     );
   }
 
-  // ── Section card wrapper ──
   Widget _sectionCard({required String title, required Widget child}) {
     return Container(
       width: double.infinity,

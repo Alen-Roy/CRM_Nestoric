@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "983536704792",
+    "project_id": "crmnestoric",
+    "storage_bucket": "crmnestoric.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:983536704792:android:8fddfc4fa81475a1da126d",
+        "android_client_info": {
+          "package_name": "com.example.crm"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC56nc6DJfXCdx1ITJElnVlu8XFMUBiUmY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

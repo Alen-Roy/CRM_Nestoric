@@ -40,6 +40,10 @@ class LeadsNotifier extends Notifier<List<Map<String, String>>> {
   void updateStage(int index, String newStage) {
     state = [...state]..[index] = {...state[index], "stage": newStage};
   }
+
+  void addLead(Map<String, String> newLead) {
+    state = [...state, newLead];
+  }
 }
 
 final leadsProvider =

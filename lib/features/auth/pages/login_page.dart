@@ -2,17 +2,19 @@ import 'package:crm/core/widgets/large_text_field.dart';
 import 'package:crm/core/widgets/submit_button.dart';
 import 'package:crm/features/auth/pages/register_page.dart';
 import 'package:crm/features/client/features/shell/main_shell.dart';
+import 'package:crm/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -25,6 +27,24 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ ref.listen is here in build(), not inside a callback
+    ref.listen(authProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => MainShell()),
+        );
+      }
+      if (next.status == AuthStatus.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.errorMessage ?? 'Something went wrong')),
+        );
+      }
+    });
+
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.status == AuthStatus.loading;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -112,6 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                     icon: Symbols.lock,
                     obscureText: true,
                   ),
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
@@ -127,7 +148,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: const Text(
                         'Forgot password?',
                         style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
+                          color: Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
@@ -142,7 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                     height: 58,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
+                        gradient: const LinearGradient(
                           colors: [Color(0xFFC56BFF), Color(0xFF96E1FF)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -156,17 +177,24 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
-                      child: submitButton(
-                        text: "Login",
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => MainShell(),
+                      child: isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : submitButton(
+                              text: "Login",
+                              onPressed: () {
+                                ref
+                                    .read(authProvider.notifier)
+                                    .login(
+                                      emailController.text.trim(),
+                                      passwordController.text.trim(),
+                                    );
+                              },
                             ),
-                          );
-                        },
-                      ),
                     ),
                   ),
 
@@ -181,9 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) {
-                                    return RegisterPage();
-                                  },
+                                  builder: (context) => RegisterPage(),
                                 ),
                               );
                             },
@@ -198,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                                   TextSpan(
                                     text: 'Register',
                                     style: TextStyle(
-                                      color: Color.fromARGB(255, 255, 255, 255),
+                                      color: Colors.white,
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
