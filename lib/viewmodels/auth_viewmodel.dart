@@ -1,5 +1,4 @@
 import 'package:crm/repositories/auth_repository.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
@@ -25,10 +24,11 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
-  Future<void> register(String email, String password) async {
+  Future<void> register(String email, String password, String name) async {
     state = AuthState(status: AuthStatus.loading);
     try {
       await _repo.register(email, password);
+      await _repo.updateProfile(name);
       state = AuthState(status: AuthStatus.authenticated);
     } catch (e) {
       state = AuthState(status: AuthStatus.error, errorMessage: e.toString());

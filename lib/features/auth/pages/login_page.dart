@@ -27,7 +27,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ ref.listen is here in build(), not inside a callback
     ref.listen(authProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
         Navigator.pushReplacement(

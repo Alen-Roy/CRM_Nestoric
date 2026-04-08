@@ -18,6 +18,7 @@ dependencies:
   material_symbols_icons: ^4.2906.0
   firebase_core: ^4.6.0
   firebase_auth: ^6.3.0
+  cloud_firestore: ^6.2.0
 
 dev_dependencies:
   flutter_test:

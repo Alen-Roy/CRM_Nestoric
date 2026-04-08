@@ -1,55 +1,21 @@
+import 'package:crm/models/lead_model.dart';
+import 'package:crm/repositories/lead_repository.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class LeadsNotifier extends Notifier<List<Map<String, String>>> {
-  @override
-  List<Map<String, String>> build() => [
-    {
-      "name": "John Doe",
-      "companyName": "Tech Solutions",
-      "contactPerson": "John Doe",
-      "city": "Mumbai",
-      "email": "john.doe@example.com",
-      "phone": "+1 234 567 890",
-      "stage": "Won",
-      "lastContacted": "12 Mar 2025",
-      "notes": "First meeting scheduled. Interested in our software solutions.",
-      "amount": "\$5,000",
-      "service": "SEO — Search Engine Optimization",
-      "assignTo": "Priya Sharma",
-      "leadSource": "Google Search",
-      "priority": "High",
-    },
-    {
-      "name": "Jane Smith",
-      "companyName": "Innovate Inc",
-      "contactPerson": "Jane Smith",
-      "city": "Delhi",
-      "email": "jane.smith@example.com",
-      "phone": "+1 987 654 321",
-      "stage": "Won",
-      "lastContacted": "13 Mar 2025",
-      "notes": "Follow-up call scheduled for next week.",
-      "amount": "\$10,000",
-      "service": "Google Ads / PPC",
-      "assignTo": "Amit Kumar",
-      "leadSource": "Facebook Ad",
-      "priority": "Medium",
-    },
-  ];
+// ── Repository ────────────────────────────────────────────────────────────────
+final leadRepositoryProvider = Provider<LeadRepository>((ref) {
+  return LeadRepository();
+});
 
-  void updateStage(int index, String newStage) {
-    state = [...state]..[index] = {...state[index], "stage": newStage};
-  }
+// ── All leads for the current user (real-time Firestore stream) ───────────────
+final leadsProvider = StreamProvider<List<LeadModel>>((ref) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return Stream.value([]);
+  final repository = ref.watch(leadRepositoryProvider);
+  return repository.getLeads(user.uid);
+});
 
-  void addLead(Map<String, String> newLead) {
-    state = [...state, newLead];
-  }
-}
-
-final leadsProvider =
-    NotifierProvider<LeadsNotifier, List<Map<String, String>>>(
-      LeadsNotifier.new,
-    );
-final clientsProvider = Provider(
-  (ref) => ref.watch(leadsProvider).where((l) => l["stage"] == "Won").toList(),
-);
+// NOTE: clientsProvider was removed.
+// Clients are now a separate Firestore collection managed by client_viewmodel.dart.
+// Use: ref.watch(clientsStreamProvider) from package:crm/viewmodels/client_viewmodel.dart

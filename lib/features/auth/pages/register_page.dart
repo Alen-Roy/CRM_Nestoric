@@ -1,14 +1,48 @@
 import 'package:crm/core/widgets/large_text_field.dart';
 import 'package:crm/core/widgets/submit_button.dart';
 import 'package:crm/features/auth/pages/login_page.dart';
+import 'package:crm/features/client/features/shell/main_shell.dart';
+import 'package:crm/viewmodels/auth_viewmodel.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
+  ConsumerState<RegisterPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends ConsumerState<RegisterPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(authProvider, (previous, next) {
+      if (next.status == AuthStatus.authenticated) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => MainShell()),
+        );
+      }
+      if (next.status == AuthStatus.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(next.errorMessage ?? 'Something went wrong')),
+        );
+      }
+    });
+    final authState = ref.watch(authProvider);
+    final isLoading = authState.status == AuthStatus.loading;
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
     return Scaffold(
@@ -76,7 +110,7 @@ class RegisterPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   largeTextField(
                     hintText: 'Enter your name',
-                    textController: emailController,
+                    textController: nameController,
                     icon: Symbols.person,
                   ),
                   const SizedBox(height: 20),
@@ -159,7 +193,25 @@ class RegisterPage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: submitButton(text: "Register", onPressed: () {}),
+                      child: isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : submitButton(
+                              text: "Register",
+                              onPressed: () {
+                                ref
+                                    .read(authProvider.notifier)
+                                    .register(
+                                      emailController.text.trim(),
+                                      passwordController.text.trim(),
+                                      nameController.text.trim(),
+                                    );
+                              },
+                            ),
                     ),
                   ),
 
@@ -174,9 +226,7 @@ class RegisterPage extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) {
-                                    return LoginPage();
-                                  },
+                                  builder: (context) => LoginPage(),
                                 ),
                               );
                             },

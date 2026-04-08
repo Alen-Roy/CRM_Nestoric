@@ -1,6 +1,8 @@
 import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:crm/core/widgets/large_text_field.dart';
+import 'package:crm/models/lead_model.dart';
 import 'package:crm/viewmodels/leads_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -59,22 +61,29 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
     "📊 Exhibition",
   ];
   Future<void> _handleSave() async {
-    ref.read(leadsProvider.notifier).addLead({
-      "name": _contactPersonController.text,
-      "companyName": _companyNameController.text,
-      "contactPerson": _contactPersonController.text,
-      "city": _cityController.text,
-      "phone": _phoneController.text,
-      "email": _emailController.text,
-      "amount": _estimatedValueController.text,
-      "notes": _notesController.text,
-      "service": _serviceController.value.join(", "),
-      "assignTo": _assignToController.value ?? "",
-      "leadSource": _selectedSource ?? "",
-      "priority": _selectedPriority.replaceAll(RegExp(r'[^\w\s]'), '').trim(),
-      "stage": "New",
-      "lastContacted": DateTime.now().toString().split(' ')[0],
-    });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return;
+    }
+    final newLead = LeadModel(
+      name: _contactPersonController.text.trim().isEmpty
+          ? "Un-named Lead"
+          : _contactPersonController.text,
+      companyName: _companyNameController.text,
+      contactPerson: _contactPersonController.text,
+      city: _cityController.text,
+      phone: _phoneController.text,
+      email: _emailController.text,
+      amount: _estimatedValueController.text,
+      notes: _notesController.text,
+      service: _serviceController.value.join(", "),
+      assignTo: _assignToController.value ?? "",
+      leadSource: _selectedSource ?? "",
+      priority: _selectedPriority.replaceAll(RegExp(r'[^\w\s]'), '').trim(),
+      stage: "New",
+      userId: user.uid,
+    );
+    await ref.read(leadRepositoryProvider).addLead(newLead);
   }
 
   CustomDropdownDecoration get _dropdownDecoration => CustomDropdownDecoration(

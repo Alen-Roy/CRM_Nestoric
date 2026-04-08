@@ -36,10 +36,6 @@ class _TaskPageState extends ConsumerState<TaskPage> {
     setState(() => _selectedIndex = index);
   }
 
-  void _onTaskToggle(TaskModel task) {
-    ref.read(tasksProvider.notifier).toggleTask(task);
-  }
-
   String get _selectedDateLabel {
     if (_selectedIndex == 0) return 'Today';
     return _fullDayFormat.format(_dates[_selectedIndex]);
@@ -47,24 +43,22 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
   @override
   Widget build(BuildContext context) {
-    final tasks = ref.watch(tasksProvider);
-    final filtered = _filteredTasks(tasks);
+    // Use the new Firestore stream provider
+    final tasksAsync = ref.watch(tasksStreamProvider);
 
     return Scaffold(
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(right: 16, bottom: 80),
         child: FloatingActionButton(
           onPressed: () async {
-            final newTask = await Navigator.push<TaskModel>(
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (_) =>
                     TaskAddPage(selectedDate: _dates[_selectedIndex]),
               ),
             );
-            if (newTask != null) {
-              ref.read(tasksProvider.notifier).addTask(newTask);
-            }
+            // No need to addTask manually — TaskAddPage now saves to Firestore directly
           },
           backgroundColor: Colors.white12,
           child: const Icon(Icons.add, color: Colors.white),
@@ -103,64 +97,85 @@ class _TaskPageState extends ConsumerState<TaskPage> {
               ),
               const SizedBox(height: 10),
               Expanded(
-                child: filtered.isEmpty
-                    ? const Center(
+                child: tasksAsync.when(
+                  data: (tasks) {
+                    final filtered = _filteredTasks(tasks);
+                    if (filtered.isEmpty) {
+                      return const Center(
                         child: Text(
-                          "No tasks for this day.",
+                          'No tasks for this day.',
                           style: TextStyle(color: Colors.white30, fontSize: 16),
                         ),
-                      )
-                    : ListView.separated(
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final task = filtered[index];
-                          return TaskCard(
-                            task: task,
-                            scheduledAt: task.scheduledAt,
-                            onToggle: () => _onTaskToggle(task),
-                            onDelete: () {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  backgroundColor: const Color(0xFF1E1E1E),
-                                  title: const Text(
-                                    'Delete Task?',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                                  content: const Text(
-                                    'Are you sure you want to delete this task?',
-                                    style: TextStyle(color: Colors.white54),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text(
-                                        'Cancel',
-                                        style: TextStyle(color: Colors.white54),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        ref
-                                            .read(tasksProvider.notifier)
-                                            .deleteTask(task);
-                                      },
-                                      child: const Text(
-                                        'Delete',
-                                        style: TextStyle(
-                                          color: Colors.redAccent,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                      );
+                    }
+                    return ListView.separated(
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      itemBuilder: (context, index) {
+                        final task = filtered[index];
+                        return TaskCard(
+                          task: task,
+                          scheduledAt: task.scheduledAt,
+                          onToggle: () {
+                            ref
+                                .read(taskActionProvider.notifier)
+                                .toggleTask(task);
+                          },
+                          onDelete: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                backgroundColor: const Color(0xFF1E1E1E),
+                                title: const Text(
+                                  'Delete Task?',
+                                  style: TextStyle(color: Colors.white),
                                 ),
-                              );
-                            },
-                          );
-                        },
-                      ),
+                                content: const Text(
+                                  'Are you sure you want to delete this task?',
+                                  style: TextStyle(color: Colors.white54),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text(
+                                      'Cancel',
+                                      style: TextStyle(color: Colors.white54),
+                                    ),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                      if (task.id != null) {
+                                        ref
+                                            .read(taskActionProvider.notifier)
+                                            .deleteTask(task.id!);
+                                      }
+                                    },
+                                    child: const Text(
+                                      'Delete',
+                                      style:
+                                          TextStyle(color: Colors.redAccent),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(
+                    child:
+                        CircularProgressIndicator(color: Colors.white54),
+                  ),
+                  error: (e, _) => Center(
+                    child: Text(
+                      'Error: $e',
+                      style: const TextStyle(color: Colors.redAccent),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

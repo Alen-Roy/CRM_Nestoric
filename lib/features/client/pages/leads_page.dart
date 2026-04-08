@@ -1,6 +1,7 @@
 import 'package:crm/core/widgets/custome_search.dart';
 import 'package:crm/core/widgets/leads_card.dart';
 import 'package:crm/features/client/pages/lead_detail_page.dart';
+import 'package:crm/models/lead_model.dart';
 import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,19 +24,15 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
 
   int _selectedStage = 0;
   String _searchQuery = "";
-
-  List<Map<String, String>> _filteredLeads(List<Map<String, String>> leads) {
-    List<Map<String, String>> result = _selectedStage == 0
+  List<LeadModel> _filteredLeads(List<LeadModel> leads) {
+    List<LeadModel> result = _selectedStage == 0
         ? leads
-        : leads
-              .where((lead) => lead["stage"] == _stages[_selectedStage])
-              .toList();
+        : leads.where((lead) => lead.stage == _stages[_selectedStage]).toList();
     if (_searchQuery.isNotEmpty) {
       result = result
           .where(
-            (lead) => lead["name"]!.toLowerCase().contains(
-              _searchQuery.toLowerCase(),
-            ),
+            (lead) =>
+                lead.name.toLowerCase().contains(_searchQuery.toLowerCase()),
           )
           .toList();
     }
@@ -44,8 +41,8 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final leads = ref.watch(leadsProvider);
-    final filtered = _filteredLeads(leads);
+    final leadsAsync = ref.watch(leadsProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       body: SafeArea(
@@ -107,45 +104,66 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
                 ),
               ),
               Expanded(
-                child: filtered.isEmpty
-                    ? const Center(
+                child: leadsAsync.when(
+                  data: (leads) {
+                    final filtered = _filteredLeads(leads);
+
+                    if (filtered.isEmpty) {
+                      return const Center(
                         child: Text(
                           "No leads found.",
                           style: TextStyle(color: Colors.white30, fontSize: 16),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.only(top: 16, bottom: 16),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          final lead = filtered[index];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => LeadDetailPage(lead: lead),
-                              ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(top: 16, bottom: 16),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final lead = filtered[index];
+                        return GestureDetector(
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  LeadDetailPage(lead: lead),
                             ),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(18),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF141414),
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: Colors.white30),
-                              ),
-                              child: LeadsCard(
-                                name: lead["name"]!,
-                                companyName: lead["companyName"],
-                                email: lead["email"],
-                                phone: lead["phone"]!,
-                                stage: lead["stage"]!,
-                                lastContacted: lead["lastContacted"]!,
-                              ),
+                          ),
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(18),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF141414),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(color: Colors.white30),
                             ),
-                          );
-                        },
-                      ),
+                            child: LeadsCard(
+                              // IMPORTANT: Use dot-notation for models
+                              name: lead.name,
+                              companyName: lead.companyName ?? "",
+                              email: lead.email ?? "",
+                              phone: lead.phone,
+                              stage: lead.stage,
+                              lastContacted: lead.lastContacted ?? "",
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                  // Show a spinner while Firestore makes the network request
+                  loading: () => const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  ),
+                  // Show text if an error crashes the stream
+                  error: (error, stack) => Center(
+                    child: Text(
+                      "Error: $error",
+                      style: TextStyle(color: Colors.red),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),

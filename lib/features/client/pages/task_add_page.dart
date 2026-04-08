@@ -1,17 +1,20 @@
 import 'package:crm/models/task_model.dart';
+import 'package:crm/viewmodels/task_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // ✅ 1. Added Cupertino import
+import 'package:flutter/cupertino.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class TaskAddPage extends StatefulWidget {
+class TaskAddPage extends ConsumerStatefulWidget {
   final DateTime selectedDate;
 
   const TaskAddPage({super.key, required this.selectedDate});
 
   @override
-  State<TaskAddPage> createState() => _TaskAddPageState();
+  ConsumerState<TaskAddPage> createState() => _TaskAddPageState();
 }
 
-class _TaskAddPageState extends State<TaskAddPage> {
+class _TaskAddPageState extends ConsumerState<TaskAddPage> {
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
 
@@ -93,10 +96,12 @@ class _TaskAddPageState extends State<TaskAddPage> {
     if (picked != null) setState(() => _selectedTime = picked);
   }
 
-  void _handleSave() {
+  Future<void> _handleSave() async {
     if (_titleController.text.trim().isEmpty) return;
 
-    // ✅ 5. Use _selectedDate instead of widget.selectedDate
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
     final taskDateTime = DateTime(
       _selectedDate.year,
       _selectedDate.month,
@@ -107,10 +112,16 @@ class _TaskAddPageState extends State<TaskAddPage> {
 
     final newTask = TaskModel(
       title: _titleController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
       scheduledAt: taskDateTime,
+      priority: _selectedPriority,
+      userId: user.uid,
     );
 
-    Navigator.pop(context, newTask);
+    await ref.read(taskActionProvider.notifier).addTask(newTask);
+    if (mounted) Navigator.pop(context);
   }
 
   @override

@@ -19,6 +19,10 @@ class AuthRepository {
     return result.user;
   }
 
+  Future<void> updateProfile(String name) async {
+    await _auth.currentUser?.updateDisplayName(name);
+  }
+
   Future<void> signOut() async {
     await _auth.signOut();
   }
