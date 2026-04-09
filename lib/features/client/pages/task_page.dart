@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/core/widgets/date_slider.dart';
 import 'package:crm/core/widgets/task_card.dart';
 import 'package:crm/features/client/pages/task_add_page.dart';
@@ -16,7 +17,7 @@ class TaskPage extends ConsumerStatefulWidget {
 
 class _TaskPageState extends ConsumerState<TaskPage> {
   int _selectedIndex = 0;
-  static final DateFormat _fullDayFormat = DateFormat('EEEE');
+  static final DateFormat _fullDayFormat = DateFormat('EEEE, MMM d');
 
   final List<DateTime> _dates = List.generate(
     60,
@@ -24,16 +25,15 @@ class _TaskPageState extends ConsumerState<TaskPage> {
   );
 
   List<TaskModel> _filteredTasks(List<TaskModel> tasks) {
-    final selectedDate = _dates[_selectedIndex];
-    return tasks.where((task) {
-      return task.scheduledAt.year == selectedDate.year &&
-          task.scheduledAt.month == selectedDate.month &&
-          task.scheduledAt.day == selectedDate.day;
-    }).toList();
-  }
-
-  void _onDateSelected(int index) {
-    setState(() => _selectedIndex = index);
+    final sel = _dates[_selectedIndex];
+    return tasks
+        .where(
+          (t) =>
+              t.scheduledAt.year == sel.year &&
+              t.scheduledAt.month == sel.month &&
+              t.scheduledAt.day == sel.day,
+        )
+        .toList();
   }
 
   String get _selectedDateLabel {
@@ -43,12 +43,12 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Use the new Firestore stream provider
     final tasksAsync = ref.watch(tasksStreamProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(right: 16, bottom: 80),
+        padding: const EdgeInsets.only(right: 4, bottom: 80),
         child: FloatingActionButton(
           onPressed: () async {
             await Navigator.push(
@@ -58,103 +58,142 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                     TaskAddPage(selectedDate: _dates[_selectedIndex]),
               ),
             );
-            // No need to addTask manually — TaskAddPage now saves to Firestore directly
           },
-          backgroundColor: Colors.white12,
+          backgroundColor: AppColors.primary,
+          elevation: 4,
           child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
-      backgroundColor: const Color(0xFF121212),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const SizedBox(height: 20),
               const Text(
                 'Tasks',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 16),
               DateSlider(
                 dates: _dates,
                 selectedIndex: _selectedIndex,
-                onDateSelected: _onDateSelected,
+                onDateSelected: (i) => setState(() => _selectedIndex = i),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 18),
               AnimatedDefaultTextStyle(
                 duration: const Duration(milliseconds: 250),
                 style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  color: AppColors.textMid,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
                 ),
                 child: Text(_selectedDateLabel),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Expanded(
                 child: tasksAsync.when(
                   data: (tasks) {
                     final filtered = _filteredTasks(tasks);
                     if (filtered.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          'No tasks for this day.',
-                          style: TextStyle(color: Colors.white30, fontSize: 16),
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.task_alt_rounded,
+                                color: AppColors.primary,
+                                size: 36,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'No tasks for this day',
+                              style: TextStyle(
+                                color: AppColors.textMid,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Tap + to add a new task',
+                              style: TextStyle(
+                                color: AppColors.textLight,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }
                     return ListView.separated(
+                      padding: const EdgeInsets.only(top: 4, bottom: 120),
                       itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 8),
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, index) {
                         final task = filtered[index];
                         return TaskCard(
                           task: task,
                           scheduledAt: task.scheduledAt,
-                          onToggle: () {
-                            ref
-                                .read(taskActionProvider.notifier)
-                                .toggleTask(task);
-                          },
+                          onToggle: () => ref
+                              .read(taskActionProvider.notifier)
+                              .toggleTask(task),
                           onDelete: () {
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
-                                backgroundColor: const Color(0xFF1E1E1E),
+                                backgroundColor: AppColors.surface,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
                                 title: const Text(
                                   'Delete Task?',
-                                  style: TextStyle(color: Colors.white),
+                                  style: TextStyle(
+                                    color: AppColors.textDark,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                                 content: const Text(
                                   'Are you sure you want to delete this task?',
-                                  style: TextStyle(color: Colors.white54),
+                                  style: TextStyle(color: AppColors.textMid),
                                 ),
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
                                     child: const Text(
                                       'Cancel',
-                                      style: TextStyle(color: Colors.white54),
+                                      style: TextStyle(
+                                        color: AppColors.textMid,
+                                      ),
                                     ),
                                   ),
                                   TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      if (task.id != null) {
+                                      if (task.id != null)
                                         ref
                                             .read(taskActionProvider.notifier)
                                             .deleteTask(task.id!);
-                                      }
                                     },
                                     child: const Text(
                                       'Delete',
-                                      style:
-                                          TextStyle(color: Colors.redAccent),
+                                      style: TextStyle(
+                                        color: AppColors.danger,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -166,13 +205,12 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                     );
                   },
                   loading: () => const Center(
-                    child:
-                        CircularProgressIndicator(color: Colors.white54),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   ),
                   error: (e, _) => Center(
                     child: Text(
                       'Error: $e',
-                      style: const TextStyle(color: Colors.redAccent),
+                      style: const TextStyle(color: AppColors.danger),
                     ),
                   ),
                 ),

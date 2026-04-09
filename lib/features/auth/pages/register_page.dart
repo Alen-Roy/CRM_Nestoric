@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/core/widgets/large_text_field.dart';
 import 'package:crm/core/widgets/submit_button.dart';
 import 'package:crm/features/auth/pages/login_page.dart';
@@ -23,6 +24,7 @@ class _LoginPageState extends ConsumerState<RegisterPage> {
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    nameController.dispose();
     super.dispose();
   }
 
@@ -30,32 +32,23 @@ class _LoginPageState extends ConsumerState<RegisterPage> {
   Widget build(BuildContext context) {
     ref.listen(authProvider, (previous, next) {
       if (next.status == AuthStatus.authenticated) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => MainShell()),
-        );
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => MainShell()));
       }
       if (next.status == AuthStatus.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage ?? 'Something went wrong')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.errorMessage ?? 'Something went wrong')));
       }
     });
     final authState = ref.watch(authProvider);
     final isLoading = authState.status == AuthStatus.loading;
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: ConstrainedBox(
             constraints: BoxConstraints(
-              minHeight:
-                  MediaQuery.of(context).size.height -
-                  MediaQuery.of(context).padding.top -
-                  MediaQuery.of(context).padding.bottom,
+              minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top - MediaQuery.of(context).padding.bottom,
             ),
             child: IntrinsicHeight(
               child: Column(
@@ -66,191 +59,67 @@ class _LoginPageState extends ConsumerState<RegisterPage> {
                     child: Column(
                       children: [
                         Container(
+                          width: 80,
+                          height: 80,
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF96E1FF).withOpacity(0.1),
-                            shape: BoxShape.circle,
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.18), blurRadius: 20, offset: const Offset(0, 8))],
                           ),
-                          child: Image.asset('assets/logo/logo.png', scale: 3),
+                          child: Image.asset('assets/logo/logo.png'),
                         ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Create your account',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
+                        const SizedBox(height: 24),
+                        const Text('Create your account', style: TextStyle(color: AppColors.textDark, fontSize: 28, fontWeight: FontWeight.w800)),
                         const SizedBox(height: 6),
-                        Text(
-                          'Sign up to your CRM account',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.45),
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
+                        const Text('Sign up to your CRM account', style: TextStyle(color: AppColors.textMid, fontSize: 14)),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 56),
-
-                  Text(
-                    'Name',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
+                  const SizedBox(height: 52),
+                  const Text('Name', style: TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  largeTextField(
-                    hintText: 'Enter your name',
-                    textController: nameController,
-                    icon: Symbols.person,
-                  ),
+                  largeTextField(hintText: 'Enter your name', textController: nameController, icon: Symbols.person),
                   const SizedBox(height: 20),
-
-                  Text(
-                    'Email',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
+                  const Text('Email', style: TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  largeTextField(
-                    hintText: 'Enter your email',
-                    textController: emailController,
-                    icon: Symbols.mail,
-                  ),
-
+                  largeTextField(hintText: 'Enter your email', textController: emailController, icon: Symbols.mail),
                   const SizedBox(height: 20),
-
-                  Text(
-                    'Password',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
+                  const Text('Password', style: TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 8),
-                  largeTextField(
-                    hintText: 'Enter your password',
-                    textController: passwordController,
-                    icon: Symbols.lock,
-                    obscureText: true,
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 8,
-                          horizontal: 4,
-                        ),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      child: const Text(
-                        'Forgot password?',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 255, 255, 255),
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 28),
-
+                  largeTextField(hintText: 'Enter your password', textController: passwordController, icon: Symbols.lock, obscureText: true),
+                  const SizedBox(height: 32),
                   SizedBox(
                     width: double.infinity,
-                    height: 58,
+                    height: 56,
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [Color(0xFFC56BFF), Color(0xFF96E1FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF96E1FF).withOpacity(0.35),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.30), blurRadius: 18, offset: const Offset(0, 8))],
                       ),
                       child: isLoading
-                          ? const Center(
-                              child: CircularProgressIndicator(
-                                color: Colors.white,
-                                strokeWidth: 2,
-                              ),
-                            )
+                          ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                           : submitButton(
-                              text: "Register",
-                              onPressed: () {
-                                ref
-                                    .read(authProvider.notifier)
-                                    .register(
-                                      emailController.text.trim(),
-                                      passwordController.text.trim(),
-                                      nameController.text.trim(),
-                                    );
-                              },
+                              text: 'Register',
+                              onPressed: () => ref.read(authProvider.notifier).register(emailController.text.trim(), passwordController.text.trim(), nameController.text.trim()),
                             ),
                     ),
                   ),
-
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 24, top: 32),
+                    padding: const EdgeInsets.only(bottom: 24, top: 28),
                     child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LoginPage(),
-                                ),
-                              );
-                            },
-                            child: Text.rich(
-                              TextSpan(
-                                text: "Already have an account? ",
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.4),
-                                  fontSize: 13,
-                                ),
-                                children: const [
-                                  TextSpan(
-                                    text: 'Login',
-                                    style: TextStyle(
-                                      color: Color.fromARGB(255, 255, 255, 255),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                      child: GestureDetector(
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage())),
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Already have an account? ',
+                            style: const TextStyle(color: AppColors.textMid, fontSize: 13),
+                            children: const [
+                              TextSpan(text: 'Login', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                            ],
                           ),
-                          const SizedBox(height: 14),
-                        ],
+                        ),
                       ),
                     ),
                   ),

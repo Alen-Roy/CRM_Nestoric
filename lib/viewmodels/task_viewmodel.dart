@@ -63,5 +63,3 @@ final taskActionProvider =
   TaskActionNotifier.new,
 );
 
-// ── Keep old tasksProvider alias so nothing else breaks ───────────────────────
-// TaskPage and TaskAddPage will be updated to use the new providers.

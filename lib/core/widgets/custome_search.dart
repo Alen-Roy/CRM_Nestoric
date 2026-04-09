@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -9,27 +10,29 @@ class CustomeSearch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
+      height: 52,
       width: double.infinity,
-      margin: const EdgeInsets.only(top: 20),
-      padding: const EdgeInsets.all(18),
+      margin: const EdgeInsets.only(top: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: TextField(
         onChanged: onChanged,
-        style: const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+        style: const TextStyle(color: AppColors.textDark, fontSize: 14),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.white30),
-          prefixIcon: const Icon(
-            Symbols.search,
-            color: Colors.white30,
-            size: 22,
-          ),
+          hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+          prefixIcon: const Icon(Symbols.search, color: AppColors.textLight, size: 20),
           border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(vertical: 16),
         ),
       ),
     );

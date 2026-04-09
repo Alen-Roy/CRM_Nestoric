@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/features/client/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
@@ -12,46 +13,50 @@ class QuickActionContainers extends StatelessWidget {
       itemCount: quickActions.length,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
-        childAspectRatio: 1.6,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 1.65,
       ),
       itemBuilder: (context, index) {
         final action = quickActions[index];
         return Material(
           color: Colors.transparent,
           child: InkWell(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(16),
             onTap: action.onTap,
             child: Ink(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: const Color(0xFF141414),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white30),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    height: 46,
-                    width: 46,
+                    height: 40,
+                    width: 40,
                     decoration: BoxDecoration(
-                      color: Colors.white30,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white30),
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(action.icon, color: Colors.white, size: 26),
+                    child: Icon(action.icon, color: AppColors.primary, size: 22),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Text(
                     action.label,
-                    textAlign: TextAlign.start,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.textDark,
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                     ),

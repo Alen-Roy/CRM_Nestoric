@@ -20,23 +20,18 @@ class HomeStats {
 // ── Provider ──────────────────────────────────────────────────────────────────
 // Combines leadsProvider + tasksStreamProvider to compute all dashboard stats.
 // Rebuilds automatically whenever any lead or task changes in Firestore.
+// Resilient: if tasks stream errors, still shows lead stats with tasksToday = 0.
 final homeStatsProvider = Provider<AsyncValue<HomeStats>>((ref) {
   final leadsAsync = ref.watch(leadsProvider);
   final tasksAsync = ref.watch(tasksStreamProvider);
 
-  // If either stream is loading, return loading
-  if (leadsAsync.isLoading || tasksAsync.isLoading) {
-    return const AsyncValue.loading();
+  // Leads are required — propagate loading/error states for leads.
+  if (leadsAsync.isLoading) return const AsyncValue.loading();
+  if (leadsAsync.hasError) {
+    return AsyncValue.error(leadsAsync.error!, leadsAsync.stackTrace!);
   }
 
-  // If either has an error, return that error
-  if (leadsAsync.hasError)
-    return AsyncValue.error(leadsAsync.error!, leadsAsync.stackTrace!);
-  if (tasksAsync.hasError)
-    return AsyncValue.error(tasksAsync.error!, tasksAsync.stackTrace!);
-
   final leads = leadsAsync.value ?? [];
-  final tasks = tasksAsync.value ?? [];
 
   // Won leads
   final wonLeads = leads.where((l) => l.stage == 'Won').toList();
@@ -50,14 +45,19 @@ final homeStatsProvider = Provider<AsyncValue<HomeStats>>((ref) {
     }
   }
 
-  // Count tasks scheduled for today (not done)
-  final today = DateTime.now();
-  final todayTasks = tasks.where((t) {
-    return !t.isDone &&
-        t.scheduledAt.year == today.year &&
-        t.scheduledAt.month == today.month &&
-        t.scheduledAt.day == today.day;
-  }).length;
+  // Count tasks scheduled for today (not done).
+  // Gracefully degrades to 0 if tasks stream is still loading or errored.
+  int todayTasks = 0;
+  if (tasksAsync.hasValue) {
+    final tasks = tasksAsync.value ?? [];
+    final today = DateTime.now();
+    todayTasks = tasks.where((t) {
+      return !t.isDone &&
+          t.scheduledAt.year == today.year &&
+          t.scheduledAt.month == today.month &&
+          t.scheduledAt.day == today.day;
+    }).length;
+  }
 
   return AsyncValue.data(
     HomeStats(

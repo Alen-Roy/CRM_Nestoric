@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/features/client/pages/home_page.dart';
 import 'package:crm/features/client/components/custome_navigationbar.dart';
 import 'package:crm/features/client/pages/client_page.dart';
@@ -26,7 +27,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: AppColors.background,
       body: IndexedStack(index: _currentIndex, children: _pages),
       extendBody: true,
       bottomNavigationBar: CustomBottomNavBar(

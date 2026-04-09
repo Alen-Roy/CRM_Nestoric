@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/core/widgets/activity_timeline.dart';
 import 'package:crm/models/activity_model.dart';
 import 'package:crm/models/lead_model.dart';
@@ -9,7 +10,6 @@ import 'package:material_symbols_icons/symbols.dart';
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final LeadModel lead;
-
   const LeadDetailPage({super.key, required this.lead});
 
   @override
@@ -27,31 +27,21 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
 
   Color _stageColor(String stage) {
     switch (stage) {
-      case 'New':
-        return const Color(0xFF96E1FF);
-      case 'Proposal':
-        return const Color(0xFFFFC97A);
-      case 'Negotiation':
-        return const Color(0xFFC56BFF);
-      case 'Won':
-        return const Color(0xFF67D39F);
-      case 'Lost':
-        return Colors.redAccent;
-      default:
-        return Colors.grey;
+      case 'New':         return AppColors.secondary;
+      case 'Proposal':    return AppColors.warning;
+      case 'Negotiation': return AppColors.primary;
+      case 'Won':         return AppColors.success;
+      case 'Lost':        return AppColors.danger;
+      default:            return AppColors.textLight;
     }
   }
 
   Color _priorityColor(String? priority) {
     switch (priority) {
-      case 'High':
-        return Colors.red;
-      case 'Medium':
-        return Colors.amber;
-      case 'Low':
-        return Colors.green;
-      default:
-        return Colors.grey;
+      case 'High':   return AppColors.danger;
+      case 'Medium': return AppColors.warning;
+      case 'Low':    return AppColors.success;
+      default:       return AppColors.textLight;
     }
   }
 
@@ -64,20 +54,12 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
         _showWonCelebration();
       } else if (newStage == 'Lost') {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Lead marked as Lost'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+          const SnackBar(content: Text('Lead marked as Lost'), backgroundColor: AppColors.danger, behavior: SnackBarBehavior.floating),
         );
         Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Moved to $newStage'),
-            backgroundColor: const Color(0xFF1E1E2E),
-            behavior: SnackBarBehavior.floating,
-          ),
+          SnackBar(content: Text('Moved to $newStage'), behavior: SnackBarBehavior.floating),
         );
       }
     }
@@ -88,39 +70,22 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A2A1A),
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('🏆', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 12),
-            const Text(
-              'Deal Won!',
-              style: TextStyle(
-                color: Color(0xFF67D39F),
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const Text('Deal Won!', style: TextStyle(color: AppColors.success, fontSize: 28, fontWeight: FontWeight.w800)),
             const SizedBox(height: 8),
-            Text(
-              '${_lead.name} has been moved to Clients.',
-              style: const TextStyle(color: Colors.white70, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
+            Text('${_lead.name} has been moved to Clients.', style: const TextStyle(color: AppColors.textMid, fontSize: 14), textAlign: TextAlign.center),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              Navigator.pop(context);
-            },
-            child: const Text(
-              'View Clients →',
-              style: TextStyle(color: Color(0xFF67D39F)),
-            ),
+            onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
+            child: const Text('View Clients →', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -132,10 +97,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _LeadLogActivitySheet(
-        leadId: _lead.id ?? '',
-        ref: ref,
-      ),
+      builder: (ctx) => _LeadLogActivitySheet(leadId: _lead.id ?? '', ref: ref),
     );
   }
 
@@ -143,30 +105,19 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E1E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Lead?',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        content: const Text(
-          'This will permanently delete the lead and all its data.',
-          style: TextStyle(color: Colors.white54),
-        ),
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Delete Lead?', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700)),
+        content: const Text('This will permanently delete the lead and all its data.', style: TextStyle(color: AppColors.textMid)),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel',
-                style: TextStyle(color: Colors.white38)),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: AppColors.textMid))),
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await ref
-                  .read(leadDetailProvider.notifier)
-                  .deleteLead(_lead.id!);
+              await ref.read(leadDetailProvider.notifier).deleteLead(_lead.id!);
               if (mounted) Navigator.pop(context);
             },
-            child: const Text('Delete',
-                style: TextStyle(color: Colors.redAccent)),
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -179,43 +130,29 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
     final activitiesAsync = ref.watch(activitiesProvider(_lead.id ?? ''));
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF121212),
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Lead Details',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Lead Details', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 18)),
         actions: [
           if (stageAsync.isLoading)
-            const Padding(
-              padding: EdgeInsets.all(12),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2),
-              ),
-            ),
+            const Padding(padding: EdgeInsets.all(12), child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2))),
           IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.white54),
+            icon: const Icon(Icons.delete_outline, color: AppColors.textLight),
             onPressed: _lead.id != null ? _confirmDelete : null,
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showLogActivitySheet,
-        backgroundColor: const Color(0xFF2AB3EF),
-        icon: const Icon(Icons.add, color: Colors.black),
-        label: const Text(
-          'Log Activity',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add, color: Colors.white),
+        label: const Text('Log Activity', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -224,82 +161,43 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
             // ── Hero header ───────────────────────────────────────────────
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+              margin: const EdgeInsets.fromLTRB(20, 4, 20, 0),
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E1E2E), Color(0xFF2A2A4A)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
+                gradient: AppColors.subtleGradient,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: AppColors.border),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   CircleAvatar(
-                    radius: 32,
-                    backgroundColor: Colors.white10,
-                    child: Text(
-                      _lead.name[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    radius: 30,
+                    backgroundColor: AppColors.primaryLight,
+                    child: Text(_lead.name[0].toUpperCase(), style: const TextStyle(color: AppColors.primary, fontSize: 24, fontWeight: FontWeight.w800)),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          _lead.name,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text(_lead.name, style: const TextStyle(color: AppColors.textDark, fontSize: 20, fontWeight: FontWeight.w800)),
                         if (_lead.companyName != null)
-                          Text(
-                            _lead.companyName!,
-                            style: const TextStyle(
-                                color: Colors.white60, fontSize: 13),
-                          ),
-                        const SizedBox(height: 6),
+                          Text(_lead.companyName!, style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
+                        const SizedBox(height: 8),
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: _stageColor(_lead.stage)
-                                    .withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: _stageColor(_lead.stage)),
+                                color: _stageColor(_lead.stage).withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(20),
                               ),
-                              child: Text(
-                                _lead.stage,
-                                style: TextStyle(
-                                  color: _stageColor(_lead.stage),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
+                              child: Text(_lead.stage, style: TextStyle(color: _stageColor(_lead.stage), fontSize: 12, fontWeight: FontWeight.w700)),
                             ),
                             if (_lead.amount != null) ...[
                               const SizedBox(width: 10),
-                              Text(
-                                '₹${_lead.amount}',
-                                style: const TextStyle(
-                                  color: Color(0xFF67D39F),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
+                              Text('₹${_lead.amount}', style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 15)),
                             ],
                           ],
                         ),
@@ -308,9 +206,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
                   ),
                   Column(
                     children: [
-                      _contactCircle(Symbols.call, Colors.green),
+                      _contactCircle(Symbols.call, AppColors.success),
                       const SizedBox(height: 8),
-                      _contactCircle(Symbols.mail, Colors.blue),
+                      _contactCircle(Symbols.mail, AppColors.secondary),
                     ],
                   ),
                 ],
@@ -319,54 +217,41 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
 
             const SizedBox(height: 20),
 
-            // ── Stage progress ────────────────────────────────────────────
             if (_lead.stage != 'Lost') ...[
               _sectionTitle('🚀 Pipeline Stage'),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _StagePipeline(
-                  currentStage: _lead.stage,
-                  onStageSelected: _moveStage,
-                  stageColor: _stageColor,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _StagePipeline(currentStage: _lead.stage, onStageSelected: _moveStage, stageColor: _stageColor),
               ),
               const SizedBox(height: 16),
             ],
 
-            // ── Mark as Lost button ───────────────────────────────────────
             if (_lead.stage != 'Won' && _lead.stage != 'Lost')
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: OutlinedButton.icon(
                   onPressed: () => _moveStage('Lost'),
-                  icon: const Icon(Icons.close,
-                      color: Colors.redAccent, size: 16),
-                  label: const Text('Mark as Lost',
-                      style: TextStyle(color: Colors.redAccent)),
+                  icon: const Icon(Icons.close, color: AppColors.danger, size: 16),
+                  label: const Text('Mark as Lost', style: TextStyle(color: AppColors.danger)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.redAccent),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
+                    side: const BorderSide(color: AppColors.danger),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
               ),
 
             const SizedBox(height: 20),
 
-            // ── Company Details ───────────────────────────────────────────
             _sectionTitle('🏢 Company Details'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _infoCard(Symbols.business,
-                      _lead.companyName ?? '—', 'Company Name'),
+                  _infoCard(Symbols.business, _lead.companyName ?? '—', 'Company Name'),
                   const SizedBox(height: 10),
-                  _infoCard(Symbols.person,
-                      _lead.contactPerson ?? '—', 'Contact Person'),
+                  _infoCard(Symbols.person, _lead.contactPerson ?? '—', 'Contact Person'),
                   const SizedBox(height: 10),
-                  _infoCard(
-                      Symbols.location_city, _lead.city ?? '—', 'City'),
+                  _infoCard(Symbols.location_city, _lead.city ?? '—', 'City'),
                   const SizedBox(height: 10),
                   _infoCard(Symbols.call, _lead.phone, 'Phone'),
                   const SizedBox(height: 10),
@@ -376,101 +261,50 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
             ),
 
             const SizedBox(height: 20),
-
-            // ── Service Details ───────────────────────────────────────────
             _sectionTitle('📦 Service Details'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _infoCard(Symbols.home_repair_service,
-                      _lead.service ?? '—', 'Service Interested In'),
+                  _infoCard(Symbols.home_repair_service, _lead.service ?? '—', 'Service Interested In'),
                   const SizedBox(height: 10),
-                  _infoCard(Symbols.currency_rupee,
-                      _lead.amount ?? '—', 'Estimated Value'),
+                  _infoCard(Symbols.currency_rupee, _lead.amount ?? '—', 'Estimated Value'),
                   const SizedBox(height: 10),
-                  _infoCard(Symbols.manage_accounts,
-                      _lead.assignTo ?? '—', 'Assigned To'),
+                  _infoCard(Symbols.manage_accounts, _lead.assignTo ?? '—', 'Assigned To'),
                 ],
               ),
             ),
 
             const SizedBox(height: 20),
-
-            // ── Lead Source ───────────────────────────────────────────────
             _sectionTitle('📡 Lead Source'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _infoCard(
-                  Symbols.travel_explore, _lead.leadSource ?? '—', 'Source'),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _infoCard(Symbols.travel_explore, _lead.leadSource ?? '—', 'Source'),
             ),
 
             const SizedBox(height: 20),
-
-            // ── Priority & Notes ──────────────────────────────────────────
             _sectionTitle('⚡ Priority & Notes'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF141414),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.white12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Symbols.flag,
-                            color: _priorityColor(_lead.priority), size: 20),
-                        const SizedBox(width: 14),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _lead.priority ?? '—',
-                              style: TextStyle(
-                                color: _priorityColor(_lead.priority),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const Text(
-                              'Lead Priority',
-                              style: TextStyle(
-                                  color: Colors.white38, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                  _infoCard(Symbols.flag, _lead.priority ?? '—', 'Lead Priority', valueColor: _priorityColor(_lead.priority)),
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1A1A3A),
+                      color: AppColors.surface,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white12),
+                      border: Border.all(color: AppColors.border),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Notes',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 10),
-                        Text(
-                          _lead.notes ?? 'No notes available.',
-                          style: const TextStyle(
-                              color: Colors.white60, fontSize: 13),
-                        ),
+                        const Text('Notes', style: TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700)),
+                        const SizedBox(height: 8),
+                        Text(_lead.notes ?? 'No notes available.', style: const TextStyle(color: AppColors.textMid, fontSize: 13, height: 1.5)),
                       ],
                     ),
                   ),
@@ -479,33 +313,18 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
             ),
 
             const SizedBox(height: 20),
-
-            // ── Activity Timeline ─────────────────────────────────────────
             _sectionTitle('📋 Activity History'),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: activitiesAsync.when(
                 data: (activities) => ActivityTimeline(
                   activities: activities,
                   onDelete: (activity) {
-                    if (activity.id != null) {
-                      ref
-                          .read(logActivityProvider.notifier)
-                          .deleteActivity(activity.id!);
-                    }
+                    if (activity.id != null) ref.read(logActivityProvider.notifier).deleteActivity(activity.id!);
                   },
                 ),
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(
-                        color: Colors.white54, strokeWidth: 2),
-                  ),
-                ),
-                error: (e, _) => Text(
-                  'Error loading activities: $e',
-                  style: const TextStyle(color: Colors.redAccent),
-                ),
+                loading: () => const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2))),
+                error: (e, _) => Text('Error: $e', style: const TextStyle(color: AppColors.danger)),
               ),
             ),
 
@@ -519,50 +338,38 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
   Widget _contactCircle(IconData icon, Color color) {
     return CircleAvatar(
       radius: 18,
-      backgroundColor: color.withValues(alpha: 0.15),
+      backgroundColor: color.withOpacity(0.12),
       child: Icon(icon, color: color, size: 18),
     );
   }
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 16, bottom: 10),
-      child: Text(
-        title,
-        style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold),
-      ),
+      padding: const EdgeInsets.only(left: 20, bottom: 10),
+      child: Text(title, style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
     );
   }
 
-  Widget _infoCard(IconData icon, String value, String label) {
+  Widget _infoCard(IconData icon, String value, String label, {Color? valueColor}) {
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white38, size: 20),
+          Icon(icon, color: AppColors.primary, size: 20),
           const SizedBox(width: 14),
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(value,
-                    style:
-                        const TextStyle(color: Colors.white, fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
-                Text(label,
-                    style: const TextStyle(
-                        color: Colors.white38, fontSize: 12)),
+                Text(value, style: TextStyle(color: valueColor ?? AppColors.textDark, fontSize: 14, fontWeight: FontWeight.w600), maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(label, style: const TextStyle(color: AppColors.textLight, fontSize: 12)),
               ],
             ),
           ),
@@ -572,17 +379,13 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
   }
 }
 
-// ── Stage Pipeline Widget ─────────────────────────────────────────────────────
+// ── Stage Pipeline ────────────────────────────────────────────────────────────
 class _StagePipeline extends StatelessWidget {
   final String currentStage;
   final void Function(String) onStageSelected;
   final Color Function(String) stageColor;
 
-  const _StagePipeline({
-    required this.currentStage,
-    required this.onStageSelected,
-    required this.stageColor,
-  });
+  const _StagePipeline({required this.currentStage, required this.onStageSelected, required this.stageColor});
 
   @override
   Widget build(BuildContext context) {
@@ -590,11 +393,12 @@ class _StagePipeline extends StatelessWidget {
     final currentIndex = stages.indexOf(currentStage);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF141414),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white12),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
       ),
       child: Column(
         children: [
@@ -616,9 +420,7 @@ class _StagePipeline extends StatelessWidget {
                           Container(
                             height: 4,
                             decoration: BoxDecoration(
-                              color: (isPast || isCurrent)
-                                  ? color
-                                  : Colors.white12,
+                              color: (isPast || isCurrent) ? color : AppColors.border,
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
@@ -626,11 +428,9 @@ class _StagePipeline extends StatelessWidget {
                           Text(
                             stage,
                             style: TextStyle(
-                              color: isCurrent ? color : Colors.white38,
+                              color: isCurrent ? color : AppColors.textLight,
                               fontSize: 10,
-                              fontWeight: isCurrent
-                                  ? FontWeight.bold
-                                  : FontWeight.normal,
+                              fontWeight: isCurrent ? FontWeight.w700 : FontWeight.normal,
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -650,18 +450,9 @@ class _StagePipeline extends StatelessWidget {
               height: 46,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: currentStage == 'Negotiation'
-                        ? [
-                            const Color(0xFF67D39F),
-                            const Color(0xFF2E7D52)
-                          ]
-                        : [
-                            const Color(0xFF96E1FF),
-                            const Color(0xFF2AB3EF),
-                          ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: ElevatedButton(
                   onPressed: () {
@@ -671,17 +462,9 @@ class _StagePipeline extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: Text(
-                    moveButtonLabel(currentStage),
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                  child: Text(moveButtonLabel(currentStage), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
                 ),
               ),
             ),
@@ -690,19 +473,12 @@ class _StagePipeline extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: const Color(0xFF67D39F).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF67D39F)),
+                color: AppColors.success.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: AppColors.success),
               ),
               child: const Center(
-                child: Text(
-                  '🏆 Deal Won — Client Created',
-                  style: TextStyle(
-                    color: Color(0xFF67D39F),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
+                child: Text('🏆 Deal Won — Client Created', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 14)),
               ),
             ),
           ],
@@ -716,7 +492,6 @@ class _StagePipeline extends StatelessWidget {
 class _LeadLogActivitySheet extends StatefulWidget {
   final String leadId;
   final WidgetRef ref;
-
   const _LeadLogActivitySheet({required this.leadId, required this.ref});
 
   @override
@@ -726,7 +501,7 @@ class _LeadLogActivitySheet extends StatefulWidget {
 class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
   ActivityType _selectedType = ActivityType.call;
   final _outcomeController = TextEditingController();
-  final _notesController = TextEditingController();
+  final _notesController   = TextEditingController();
 
   @override
   void dispose() {
@@ -738,14 +513,13 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding:
-          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Container(
         decoration: const BoxDecoration(
-          color: Color(0xFF1E1E2E),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -755,22 +529,12 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
                 width: 40,
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+                decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)),
               ),
             ),
-            const Text(
-              'Log Activity',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold),
-            ),
+            const Text('Log Activity', style: TextStyle(color: AppColors.textDark, fontSize: 20, fontWeight: FontWeight.w700)),
             const SizedBox(height: 16),
-            const Text('Activity Type',
-                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            const Text('Activity Type', style: TextStyle(color: AppColors.textMid, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -779,36 +543,21 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
                   final isSelected = _selectedType == type;
                   return GestureDetector(
                     onTap: () => setState(() => _selectedType = type),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
                       margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.white.withValues(alpha: 0.12)
-                            : Colors.white.withValues(alpha: 0.05),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: isSelected
-                              ? Colors.white60
-                              : Colors.white12,
-                        ),
+                        color: isSelected ? AppColors.primaryLight : AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isSelected ? AppColors.primary : AppColors.border),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(type.emoji,
-                              style: const TextStyle(fontSize: 14)),
+                          Text(type.emoji, style: const TextStyle(fontSize: 14)),
                           const SizedBox(width: 6),
-                          Text(
-                            type.label,
-                            style: TextStyle(
-                              color: isSelected
-                                  ? Colors.white
-                                  : Colors.white54,
-                              fontSize: 13,
-                            ),
-                          ),
+                          Text(type.label, style: TextStyle(color: isSelected ? AppColors.primary : AppColors.textMid, fontSize: 13, fontWeight: isSelected ? FontWeight.w700 : FontWeight.normal)),
                         ],
                       ),
                     ),
@@ -817,68 +566,39 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Outcome / Summary',
-                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            const Text('Outcome / Summary', style: TextStyle(color: AppColors.textMid, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            TextField(
-              controller: _outcomeController,
-              style: const TextStyle(color: Colors.white),
-              cursorColor: Colors.white,
-              decoration:
-                  _inputDecor('e.g. Client is interested, follow up Monday'),
-            ),
+            _lightTextField(_outcomeController, 'e.g. Client is interested, follow up Monday'),
             const SizedBox(height: 12),
-            const Text('Additional Notes (optional)',
-                style: TextStyle(color: Colors.white54, fontSize: 12)),
+            const Text('Additional Notes (optional)', style: TextStyle(color: AppColors.textMid, fontSize: 12, fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            TextField(
-              controller: _notesController,
-              style: const TextStyle(color: Colors.white),
-              maxLines: 3,
-              cursorColor: Colors.white,
-              decoration: _inputDecor('Any extra details...'),
-            ),
+            _lightTextField(_notesController, 'Any extra details...', maxLines: 3),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
-              height: 50,
+              height: 52,
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF96E1FF), Color(0xFF2AB3EF)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: ElevatedButton(
                   onPressed: () async {
-                    await widget.ref
-                        .read(logActivityProvider.notifier)
-                        .logActivity(
-                          leadId: widget.leadId,
-                          type: _selectedType,
-                          outcome: _outcomeController.text.trim().isEmpty
-                              ? null
-                              : _outcomeController.text.trim(),
-                          notes: _notesController.text.trim().isEmpty
-                              ? null
-                              : _notesController.text.trim(),
-                        );
+                    await widget.ref.read(logActivityProvider.notifier).logActivity(
+                      leadId: widget.leadId,
+                      type: _selectedType,
+                      outcome: _outcomeController.text.trim().isEmpty ? null : _outcomeController.text.trim(),
+                      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+                    );
                     if (context.mounted) Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  child: const Text(
-                    'Save Activity',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
+                  child: const Text('Save Activity', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
                 ),
               ),
             ),
@@ -888,23 +608,21 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
     );
   }
 
-  InputDecoration _inputDecor(String hint) {
-    return InputDecoration(
-      hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white30),
-      filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.05),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white12),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(10),
-        borderSide: const BorderSide(color: Colors.white38),
+  Widget _lightTextField(TextEditingController controller, String hint, {int maxLines = 1}) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+      cursorColor: AppColors.primary,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 14),
+        filled: true,
+        fillColor: AppColors.background,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       ),
     );
   }

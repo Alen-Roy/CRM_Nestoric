@@ -11,17 +11,19 @@ class TaskRepository {
   }
 
   /// Real-time stream of tasks for a given user, ordered by scheduledAt.
+  /// Sorting is done in Dart to avoid requiring a composite Firestore index.
   Stream<List<TaskModel>> getTasks(String userId) {
     return _firestore
         .collection(_collection)
         .where('userId', isEqualTo: userId)
-        .orderBy('scheduledAt', descending: false)
         .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
+        .map((snapshot) {
+          final tasks = snapshot.docs
               .map((doc) => TaskModel.fromMap(doc.data(), doc.id))
-              .toList(),
-        );
+              .toList();
+          tasks.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+          return tasks;
+        });
   }
 
   /// Toggle done / undo on a task.

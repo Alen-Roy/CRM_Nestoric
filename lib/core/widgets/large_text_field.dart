@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class largeTextField extends StatefulWidget {
@@ -19,12 +20,6 @@ class largeTextField extends StatefulWidget {
 }
 
 class _LargeTextFieldState extends State<largeTextField> {
-  static const LinearGradient _focusBorderGradient = LinearGradient(
-    colors: [Color(0xFFC56BFF), Color(0xFF96E1FF)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
   late final FocusNode _focusNode;
   bool _isFocused = false;
 
@@ -34,9 +29,7 @@ class _LargeTextFieldState extends State<largeTextField> {
     _focusNode = FocusNode();
     _focusNode.addListener(() {
       if (!mounted) return;
-      setState(() {
-        _isFocused = _focusNode.hasFocus;
-      });
+      setState(() => _isFocused = _focusNode.hasFocus);
     });
   }
 
@@ -48,55 +41,56 @@ class _LargeTextFieldState extends State<largeTextField> {
 
   @override
   Widget build(BuildContext context) {
-    final BorderRadius borderRadius = BorderRadius.circular(12);
-    final BorderRadius innerBorderRadius = BorderRadius.circular(11);
-
-    return SizedBox(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
       height: 58,
-      child: Container(
-        padding: EdgeInsets.all(_isFocused ? 1.8 : 0),
-        decoration: BoxDecoration(
-          gradient: _isFocused ? _focusBorderGradient : null,
-          borderRadius: borderRadius,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _isFocused ? AppColors.primary : AppColors.border,
+          width: _isFocused ? 1.6 : 1.0,
         ),
-        child: TextField(
-          focusNode: _focusNode,
-          controller: widget.textController,
-          obscureText: widget.obscureText,
-          cursorColor: Colors.white,
-          style: const TextStyle(color: Colors.white),
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            hintStyle: const TextStyle(color: Colors.white54, fontSize: 16),
-            filled: true,
-            fillColor: const Color(0xFF141414),
-            prefixIcon: widget.icon == null
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(left: 16, right: 12),
-                    child: Icon(widget.icon, size: 22),
-                  ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 56,
-              minHeight: 56,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 18,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: innerBorderRadius,
-              borderSide: BorderSide.none,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: innerBorderRadius,
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: innerBorderRadius,
-              borderSide: BorderSide.none,
-            ),
-          ),
+        boxShadow: _isFocused
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.12),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+      ),
+      child: TextField(
+        focusNode: _focusNode,
+        controller: widget.textController,
+        obscureText: widget.obscureText,
+        cursorColor: AppColors.primary,
+        style: const TextStyle(
+          color: AppColors.textDark,
+          fontSize: 15,
+        ),
+        decoration: InputDecoration(
+          hintText: widget.hintText,
+          hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 15),
+          filled: false,
+          prefixIcon: widget.icon == null
+              ? null
+              : Padding(
+                  padding: const EdgeInsets.only(left: 16, right: 12),
+                  child: Icon(widget.icon, size: 20, color: AppColors.textLight),
+                ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 52, minHeight: 52),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
         ),
       ),
     );

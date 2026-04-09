@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/core/widgets/custome_search.dart';
 import 'package:crm/features/client/pages/client_detail_page.dart';
 import 'package:crm/models/client_model.dart';
@@ -13,90 +14,60 @@ class ClientPage extends ConsumerStatefulWidget {
 }
 
 class _ClientPageState extends ConsumerState<ClientPage> {
-  // ── Filter by Status (was incorrectly labeled Priority before) ──────────────
-  final List<String> _statuses = const [
-    'All',
-    'Active',
-    'VIP',
-    'Inactive',
-    'Completed',
-  ];
-
+  final List<String> _statuses = const ['All', 'Active', 'VIP', 'Inactive', 'Completed'];
   int _selectedStatus = 0;
   String _searchQuery = '';
 
   List<ClientModel> _filteredClients(List<ClientModel> clients) {
     List<ClientModel> result = _selectedStatus == 0
         ? clients
-        : clients
-            .where((c) => c.status == _statuses[_selectedStatus])
-            .toList();
-
+        : clients.where((c) => c.status == _statuses[_selectedStatus]).toList();
     if (_searchQuery.isNotEmpty) {
-      result = result
-          .where((c) =>
-              c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              (c.companyName
-                      ?.toLowerCase()
-                      .contains(_searchQuery.toLowerCase()) ??
-                  false))
-          .toList();
+      result = result.where((c) =>
+          c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (c.companyName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)).toList();
     }
     return result;
   }
 
   Color _statusColor(String status) {
     switch (status) {
-      case ClientStatus.vip:
-        return const Color(0xFFFFC97A);
-      case ClientStatus.active:
-        return const Color(0xFF67D39F);
-      case ClientStatus.inactive:
-        return Colors.white38;
-      case ClientStatus.completed:
-        return const Color(0xFF96E1FF);
-      default:
-        return Colors.grey;
+      case ClientStatus.vip:      return AppColors.accent3;
+      case ClientStatus.active:   return AppColors.success;
+      case ClientStatus.inactive: return AppColors.textLight;
+      case ClientStatus.completed: return AppColors.secondary;
+      default:                    return AppColors.textLight;
+    }
+  }
+
+  Color _statusBg(String status) {
+    switch (status) {
+      case ClientStatus.vip:      return AppColors.accent3.withOpacity(0.12);
+      case ClientStatus.active:   return AppColors.success.withOpacity(0.10);
+      case ClientStatus.inactive: return AppColors.border;
+      case ClientStatus.completed: return AppColors.secondary.withOpacity(0.10);
+      default:                    return AppColors.border;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Now consuming the real Firestore stream of ClientModel objects
     final clientsAsync = ref.watch(clientsStreamProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: SafeArea(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 12),
-              const Text(
-                'Clients',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              CustomeSearch(
-                hint: 'Search clients...',
-                onChanged: (value) {
-                  setState(() => _searchQuery = value);
-                },
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Filter by Status',
-                style: TextStyle(color: Colors.white, fontSize: 14),
-              ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 20),
+              const Text('Clients', style: TextStyle(color: AppColors.textDark, fontSize: 26, fontWeight: FontWeight.w800)),
+              CustomeSearch(hint: 'Search clients...', onChanged: (v) => setState(() => _searchQuery = v)),
+              const SizedBox(height: 14),
               SizedBox(
-                height: 38,
+                height: 36,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _statuses.length,
@@ -104,29 +75,24 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                   itemBuilder: (context, index) {
                     final isSelected = _selectedStatus == index;
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => _selectedStatus = index),
-                      child: Container(
+                      onTap: () => setState(() => _selectedStatus = index),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
                         alignment: Alignment.center,
-                        padding:
-                            const EdgeInsets.symmetric(horizontal: 12),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? const Color(0xFF2A2A2A)
-                              : const Color(0xFF141414),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color:
-                                isSelected ? Colors.white60 : Colors.white30,
-                          ),
+                          color: isSelected ? AppColors.primary : AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: isSelected
+                              ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))]
+                              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
                         ),
                         child: Text(
                           _statuses[index],
                           style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.white54,
+                            color: isSelected ? Colors.white : AppColors.textMid,
                             fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                           ),
                         ),
                       ),
@@ -134,122 +100,61 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                   },
                 ),
               ),
-              const SizedBox(height: 12),
-
+              const SizedBox(height: 10),
               Expanded(
                 child: clientsAsync.when(
                   data: (clients) {
                     final shown = _filteredClients(clients);
-
                     if (shown.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.people_outline,
-                                color: Colors.white24, size: 48),
-                            const SizedBox(height: 12),
-                            Text(
-                              clients.isEmpty
-                                  ? 'No clients yet.\nMark a lead as Won to create a client.'
-                                  : 'No clients match your filter.',
-                              style: const TextStyle(
-                                  color: Colors.white38, fontSize: 14),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
+                      return const Center(child: Text('No clients found.', style: TextStyle(color: AppColors.textLight, fontSize: 15)));
                     }
-
                     return ListView.builder(
+                      padding: const EdgeInsets.only(top: 8, bottom: 100),
                       itemCount: shown.length,
                       itemBuilder: (context, index) {
                         final client = shown[index];
                         final statusColor = _statusColor(client.status);
-
+                        final statusBg = _statusBg(client.status);
                         return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ClientDetailPage(client: client),
-                              ),
-                            );
-                          },
+                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ClientDetailPage(client: client))),
                           child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF141414),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: Colors.white30),
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
                             ),
                             child: Row(
                               children: [
                                 CircleAvatar(
                                   radius: 22,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.08),
+                                  backgroundColor: AppColors.primaryLight,
                                   child: Text(
                                     client.name[0].toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: const TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.w700),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        client.name,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
+                                      Text(client.name, style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700)),
                                       if (client.companyName != null)
-                                        Text(
-                                          client.companyName!,
-                                          style: const TextStyle(
-                                              color: Colors.white54,
-                                              fontSize: 12),
-                                        ),
+                                        Text(client.companyName!, style: const TextStyle(color: AppColors.textMid, fontSize: 12)),
                                       if (client.monthlyValue != null)
                                         Text(
                                           '₹${client.monthlyValue!.toStringAsFixed(0)}',
-                                          style: const TextStyle(
-                                            color: Color(0xFF67D39F),
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500,
-                                          ),
+                                          style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600),
                                         ),
                                     ],
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: statusColor.withValues(alpha: 0.15),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: statusColor),
-                                  ),
-                                  child: Text(
-                                    client.status,
-                                    style: TextStyle(
-                                      color: statusColor,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(20)),
+                                  child: Text(client.status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
                                 ),
                               ],
                             ),
@@ -258,15 +163,8 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                       },
                     );
                   },
-                  loading: () => const Center(
-                    child: CircularProgressIndicator(color: Colors.white54),
-                  ),
-                  error: (err, _) => Center(
-                    child: Text(
-                      'Error: $err',
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
+                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  error: (err, _) => Center(child: Text('Error: $err', style: const TextStyle(color: AppColors.danger))),
                 ),
               ),
             ],

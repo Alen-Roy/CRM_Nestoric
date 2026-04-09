@@ -1,3 +1,4 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/models/task_model.dart';
 import 'package:flutter/material.dart';
 
@@ -42,75 +43,77 @@ class _TaskCardState extends State<TaskCard> {
           Positioned.fill(
             child: Align(
               alignment: Alignment.centerRight,
-              child: ClipRRect(
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  width: _dragOffset.abs(),
-                  decoration: BoxDecoration(
-                    color: Colors.red,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: _dragOffset.abs() > 40
-                      ? Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.white),
-                            onPressed: () {
-                              setState(() => _dragOffset = 0);
-                              widget.onDelete();
-                            },
-                          ),
-                        )
-                      : null,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                width: _dragOffset.abs(),
+                decoration: BoxDecoration(
+                  color: AppColors.danger,
+                  borderRadius: BorderRadius.circular(14),
                 ),
+                child: _dragOffset.abs() > 40
+                    ? IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.white),
+                        onPressed: () {
+                          setState(() => _dragOffset = 0);
+                          widget.onDelete();
+                        },
+                      )
+                    : null,
               ),
             ),
           ),
-
           AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             transform: Matrix4.translationValues(_dragOffset, 0, 0),
             width: double.infinity,
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1E1E),
-              borderRadius: BorderRadius.circular(8),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Icon(
                   widget.task.isDone
-                      ? Icons.check_box
-                      : Icons.check_box_outline_blank_sharp,
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
                   color: widget.task.isDone
-                      ? Colors.greenAccent
-                      : Colors.white54,
+                      ? AppColors.success
+                      : AppColors.textLight,
+                  size: 22,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: AnimatedDefaultTextStyle(
                     duration: const Duration(milliseconds: 250),
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
                       color: widget.task.isDone
-                          ? Colors.white30
-                          : Colors.white60,
+                          ? AppColors.textLight
+                          : AppColors.textDark,
                       decoration: widget.task.isDone
                           ? TextDecoration.lineThrough
                           : TextDecoration.none,
-                      decorationColor: Colors.white30,
+                      decorationColor: AppColors.textLight,
                     ),
                     child: Row(
                       children: [
-                        Text(widget.task.title),
-                        const Spacer(),
+                        Expanded(child: Text(widget.task.title)),
                         Text(
-                          widget.scheduledAt.hour.toString().padLeft(2, '0') +
-                              ":" +
-                              widget.scheduledAt.minute.toString().padLeft(
-                                2,
-                                '0',
-                              ),
+                          '${widget.scheduledAt.hour.toString().padLeft(2, '0')}:${widget.scheduledAt.minute.toString().padLeft(2, '0')}',
+                          style: const TextStyle(
+                            color: AppColors.textLight,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                          ),
                         ),
                       ],
                     ),

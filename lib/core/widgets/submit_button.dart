@@ -1,7 +1,8 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class submitButton extends StatelessWidget {
-  submitButton({super.key, required this.text, required this.onPressed});
+  const submitButton({super.key, required this.text, required this.onPressed});
   final String text;
   final VoidCallback onPressed;
 
@@ -16,8 +17,8 @@ class submitButton extends StatelessWidget {
       ),
       child: Text(
         text,
-        style: TextStyle(
-          color: Colors.black,
+        style: const TextStyle(
+          color: Colors.white,
           fontSize: 16,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.3,

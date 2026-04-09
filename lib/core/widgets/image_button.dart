@@ -1,45 +1,47 @@
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 
 class ImageButton extends StatelessWidget {
   const ImageButton({super.key, required this.onTap, required this.image});
   final VoidCallback onTap;
   final String image;
+
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        height: 70,
-        width: 70,
+        height: 60,
+        width: 60,
         alignment: Alignment.center,
         decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: const Color.fromARGB(255, 10, 10, 10),
-              spreadRadius: 1,
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
-          color: Colors.white12,
-          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: AppColors.border),
         ),
         child: Image.network(
           image,
-          width: 50,
-          height: 50,
-          errorBuilder: (context, error, stackTrace) => const Icon(
+          width: 32,
+          height: 32,
+          errorBuilder: (_, __, ___) => const Icon(
             Icons.image_not_supported,
-            color: Colors.white38,
-            size: 30,
+            color: AppColors.textLight,
+            size: 24,
           ),
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
             return const SizedBox(
-              width: 30,
-              height: 30,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white38,
-              ),
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
             );
           },
         ),

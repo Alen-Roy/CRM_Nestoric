@@ -1,5 +1,5 @@
 import 'dart:ui';
-
+import 'package:crm/core/constants/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -15,69 +15,43 @@ class CustomBottomNavBar extends StatelessWidget {
   });
 
   static const List<_NavItem> _items = [
-    _NavItem(icon: Symbols.home, activeIcon: Symbols.home, label: 'Home'),
-    _NavItem(
-      icon: Symbols.leaderboard,
-      activeIcon: Symbols.leaderboard,
-      label: 'Leads',
-    ),
-    _NavItem(
-      icon: Symbols.person,
-      activeIcon: Symbols.person,
-      label: 'Clients',
-    ),
-    _NavItem(
-      icon: Symbols.task_alt,
-      activeIcon: Symbols.task_alt,
-      label: 'Tasks',
-    ),
-    _NavItem(
-      icon: Symbols.description,
-      activeIcon: Symbols.description,
-      label: 'Reports',
-    ),
+    _NavItem(icon: Symbols.home, label: 'Home'),
+    _NavItem(icon: Symbols.leaderboard, label: 'Leads'),
+    _NavItem(icon: Symbols.person, label: 'Clients'),
+    _NavItem(icon: Symbols.task_alt, label: 'Tasks'),
+    _NavItem(icon: Symbols.description, label: 'Reports'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = BorderRadius.circular(28);
-
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: borderRadius,
-              gradient: const LinearGradient(
-                colors: [Color(0x66211C32), Color(0x66304C5F)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(
-                color: const Color(0xFF96E1FF).withValues(alpha: 0.28),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  blurRadius: 22,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: List.generate(
-                _items.length,
-                (index) => _NavBarItem(
-                  item: _items[index],
-                  isActive: currentIndex == index,
-                  onTap: () => onTap(index),
-                ),
-              ),
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.12),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(
+            _items.length,
+            (index) => _NavBarItem(
+              item: _items[index],
+              isActive: currentIndex == index,
+              onTap: () => onTap(index),
             ),
           ),
         ),
@@ -88,13 +62,8 @@ class CustomBottomNavBar extends StatelessWidget {
 
 class _NavItem {
   final IconData icon;
-  final IconData activeIcon;
   final String label;
-  const _NavItem({
-    required this.icon,
-    required this.activeIcon,
-    required this.label,
-  });
+  const _NavItem({required this.icon, required this.label});
 }
 
 class _NavBarItem extends StatelessWidget {
@@ -116,26 +85,17 @@ class _NavBarItem extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          gradient: isActive
-              ? const LinearGradient(
-                  colors: [Color(0xFFC56BFF), Color(0xFF96E1FF)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
+          color: isActive ? AppColors.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              isActive ? item.activeIcon : item.icon,
-              color: isActive
-                  ? const Color.fromARGB(255, 255, 255, 255)
-                  : Colors.white38,
+              item.icon,
+              color: isActive ? Colors.white : AppColors.textLight,
               size: 22,
             ),
             AnimatedSize(
@@ -146,8 +106,8 @@ class _NavBarItem extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 8),
                       child: Text(
                         item.label,
-                        style: GoogleFonts.montserrat(
-                          color: Color.fromARGB(255, 255, 255, 255),
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white,
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
