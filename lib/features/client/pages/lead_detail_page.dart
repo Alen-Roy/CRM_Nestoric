@@ -97,7 +97,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => _LeadLogActivitySheet(leadId: _lead.id ?? '', ref: ref),
+      builder: (ctx) => _LeadLogActivitySheet(lead: _lead, ref: ref),
     );
   }
 
@@ -490,9 +490,9 @@ class _StagePipeline extends StatelessWidget {
 
 // ── Log Activity bottom sheet ─────────────────────────────────────────────────
 class _LeadLogActivitySheet extends StatefulWidget {
-  final String leadId;
+  final LeadModel lead;
   final WidgetRef ref;
-  const _LeadLogActivitySheet({required this.leadId, required this.ref});
+  const _LeadLogActivitySheet({required this.lead, required this.ref});
 
   @override
   State<_LeadLogActivitySheet> createState() => _LeadLogActivitySheetState();
@@ -586,7 +586,7 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
                 child: ElevatedButton(
                   onPressed: () async {
                     await widget.ref.read(logActivityProvider.notifier).logActivity(
-                      leadId: widget.leadId,
+                      lead: widget.lead,
                       type: _selectedType,
                       outcome: _outcomeController.text.trim().isEmpty ? null : _outcomeController.text.trim(),
                       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),

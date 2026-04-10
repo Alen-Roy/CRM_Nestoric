@@ -1,5 +1,9 @@
 import 'package:crm/models/activity_model.dart';
+import 'package:crm/models/lead_model.dart';
 import 'package:crm/repositories/activity_repository.dart';
+import 'package:crm/repositories/lead_repository.dart';
+import 'package:crm/viewmodels/lead_detail_viewmodel.dart';
+import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,7 +13,6 @@ final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
 });
 
 // ── Activities stream — scoped to a leadId (family provider) ─────────────────
-// Usage: ref.watch(activitiesProvider('leadId123'))
 final activitiesProvider =
     StreamProvider.family<List<ActivityModel>, String>((ref, leadId) {
   final repo = ref.watch(activityRepositoryProvider);
@@ -17,18 +20,22 @@ final activitiesProvider =
 });
 
 // ── Log Activity Notifier ─────────────────────────────────────────────────────
-// Handles the async action of saving a new activity.
 class LogActivityNotifier extends Notifier<AsyncValue<void>> {
-  late final ActivityRepository _repo;
+  late final ActivityRepository _activityRepo;
+  late final LeadRepository _leadRepo;
 
   @override
   AsyncValue<void> build() {
-    _repo = ref.watch(activityRepositoryProvider);
+    _activityRepo = ref.watch(activityRepositoryProvider);
+    _leadRepo     = ref.watch(leadRepositoryProvider);
     return const AsyncValue.data(null);
   }
 
+  // Saves the activity AND stamps lastContactedAt on the lead so the
+  // follow-up reminder resets immediately after any interaction.
   Future<void> logActivity({
-    required String leadId,
+    LeadModel? lead,
+    String? leadId,
     required ActivityType type,
     String? outcome,
     String? notes,
@@ -38,16 +45,27 @@ class LogActivityNotifier extends Notifier<AsyncValue<void>> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('Not authenticated');
 
+      final now = DateTime.now();
+
+      final id = lead?.id ?? leadId;
+      if (id == null || id.isEmpty) throw Exception('Lead ID is required');
+
+      // 1. Save the activity
       final activity = ActivityModel(
-        leadId: leadId,
+        leadId: id,
         type: type,
         outcome: outcome,
         notes: notes,
-        createdAt: DateTime.now(),
+        createdAt: now,
         createdBy: user.uid,
       );
+      await _activityRepo.addActivity(activity);
 
-      await _repo.addActivity(activity);
+      // 2. Stamp lastContactedAt on the lead (non-blocking — errors swallowed)
+      if (lead != null) {
+        await ref.read(leadDetailProvider.notifier).stampLastContacted(lead);
+      }
+
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -57,7 +75,7 @@ class LogActivityNotifier extends Notifier<AsyncValue<void>> {
   Future<void> deleteActivity(String activityId) async {
     state = const AsyncValue.loading();
     try {
-      await _repo.deleteActivity(activityId);
+      await _activityRepo.deleteActivity(activityId);
       state = const AsyncValue.data(null);
     } catch (e, st) {
       state = AsyncValue.error(e, st);

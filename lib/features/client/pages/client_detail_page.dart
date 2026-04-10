@@ -76,7 +76,7 @@ class ClientDetailPage extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _statusColor(client.status).withOpacity(0.12),
+                      color: _statusColor(client.status).withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(client.status, style: TextStyle(color: _statusColor(client.status), fontSize: 12, fontWeight: FontWeight.w700)),
@@ -149,7 +149,7 @@ class ClientDetailPage extends ConsumerWidget {
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
         ),
         child: Row(
           children: [
@@ -274,7 +274,7 @@ class _ClientLogActivitySheetState extends State<_ClientLogActivitySheet> {
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(14),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 12, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 12, offset: const Offset(0, 4))],
                 ),
                 child: ElevatedButton(
                   onPressed: () async {

@@ -9,7 +9,8 @@ class LeadModel {
   final String? email;
   final String phone;
   final String stage;
-  final String? lastContacted;
+  final String? lastContacted;       // human-readable display string e.g. "8 Apr 2026"
+  final DateTime? lastContactedAt;   // machine-readable DateTime — used for follow-up reminders
   final String? notes;
   final String? amount;
   final String? service;
@@ -29,6 +30,7 @@ class LeadModel {
     required this.phone,
     required this.stage,
     this.lastContacted,
+    this.lastContactedAt,
     this.notes,
     this.amount,
     this.service,
@@ -39,9 +41,6 @@ class LeadModel {
     required this.userId,
   });
 
-  // ── copyWith: creates a modified copy of this lead ──────────────────────
-  // Used when moving stages: lead.copyWith(stage: 'Won')
-  // Used when updating notes: lead.copyWith(notes: newText)
   LeadModel copyWith({
     String? id,
     String? name,
@@ -52,6 +51,7 @@ class LeadModel {
     String? phone,
     String? stage,
     String? lastContacted,
+    DateTime? lastContactedAt,
     String? notes,
     String? amount,
     String? service,
@@ -71,6 +71,7 @@ class LeadModel {
       phone: phone ?? this.phone,
       stage: stage ?? this.stage,
       lastContacted: lastContacted ?? this.lastContacted,
+      lastContactedAt: lastContactedAt ?? this.lastContactedAt,
       notes: notes ?? this.notes,
       amount: amount ?? this.amount,
       service: service ?? this.service,
@@ -92,6 +93,9 @@ class LeadModel {
       'phone': phone,
       'stage': stage,
       'lastContacted': lastContacted,
+      'lastContactedAt': lastContactedAt != null
+          ? Timestamp.fromDate(lastContactedAt!)
+          : null,
       'notes': notes,
       'amount': amount,
       'service': service,
@@ -106,6 +110,15 @@ class LeadModel {
   }
 
   factory LeadModel.fromMap(Map<String, dynamic> map, String id) {
+    // Parse lastContactedAt — prefer the Timestamp field,
+    // fall back to parsing the legacy human-readable string.
+    DateTime? lastContactedAt;
+    if (map['lastContactedAt'] != null) {
+      lastContactedAt = (map['lastContactedAt'] as Timestamp).toDate();
+    } else {
+      lastContactedAt = _parseDisplayDate(map['lastContacted'] as String?);
+    }
+
     return LeadModel(
       id: id,
       name: map['name'] ?? '',
@@ -116,6 +129,7 @@ class LeadModel {
       phone: map['phone'] ?? '',
       stage: map['stage'] ?? 'New',
       lastContacted: map['lastContacted'],
+      lastContactedAt: lastContactedAt,
       notes: map['notes'],
       amount: map['amount']?.toString(),
       service: map['service'],
@@ -127,5 +141,27 @@ class LeadModel {
           : null,
       userId: map['userId'] ?? '',
     );
+  }
+
+  // Parse "8 Apr 2026" style strings that were stored before lastContactedAt existed.
+  static DateTime? _parseDisplayDate(String? s) {
+    if (s == null || s.isEmpty) return null;
+    try {
+      const months = {
+        'Jan': 1, 'Feb': 2,  'Mar': 3,  'Apr': 4,
+        'May': 5, 'Jun': 6,  'Jul': 7,  'Aug': 8,
+        'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12,
+      };
+      final parts = s.split(' ');
+      if (parts.length == 3) {
+        final day   = int.tryParse(parts[0]);
+        final month = months[parts[1]];
+        final year  = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          return DateTime(year, month, day);
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 }

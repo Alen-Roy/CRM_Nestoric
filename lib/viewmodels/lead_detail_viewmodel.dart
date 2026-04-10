@@ -28,9 +28,11 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
   Future<LeadModel?> updateStage(LeadModel lead, String newStage) async {
     state = const AsyncValue.loading();
     try {
+      final now = DateTime.now();
       final updated = lead.copyWith(
         stage: newStage,
-        lastContacted: _today(),
+        lastContacted: _formatDate(now),
+        lastContactedAt: now,
       );
       await _repo.updateLead(updated);
 
@@ -44,6 +46,20 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       return null;
+    }
+  }
+
+  // ── Stamp lastContactedAt on a lead after an activity is logged ───────────
+  // Called by LogActivityNotifier so the follow-up reminder resets automatically.
+  Future<void> stampLastContacted(LeadModel lead) async {
+    try {
+      final now = DateTime.now();
+      await _repo.updateLead(lead.copyWith(
+        lastContacted: _formatDate(now),
+        lastContactedAt: now,
+      ));
+    } catch (_) {
+      // Non-critical — silently swallow; the activity was already saved.
     }
   }
 
@@ -69,38 +85,20 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
-  String _today() {
-    final now = DateTime.now();
+  String _formatDate(DateTime d) {
     const months = [
-      '',
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
-    return '${now.day} ${months[now.month]} ${now.year}';
+    return '${d.day} ${months[d.month]} ${d.year}';
   }
 }
 
 // ── Stage order and metadata ──────────────────────────────────────────────────
 const List<String> leadStages = [
-  'New',
-  'Proposal',
-  'Negotiation',
-  'Won',
-  'Lost',
+  'New', 'Proposal', 'Negotiation', 'Won', 'Lost',
 ];
 
-// Returns the next stage after the current one.
-// Returns null if already at Won or Lost.
 String? nextStage(String currentStage) {
   const progression = {
     'New': 'Proposal',
@@ -110,16 +108,11 @@ String? nextStage(String currentStage) {
   return progression[currentStage];
 }
 
-// Returns label for the move-forward button.
 String moveButtonLabel(String currentStage) {
   switch (currentStage) {
-    case 'New':
-      return '→ Move to Proposal';
-    case 'Proposal':
-      return '→ Move to Negotiation';
-    case 'Negotiation':
-      return '🏆 Mark as Won!';
-    default:
-      return '';
+    case 'New':         return '→ Move to Proposal';
+    case 'Proposal':    return '→ Move to Negotiation';
+    case 'Negotiation': return '🏆 Mark as Won!';
+    default:            return '';
   }
 }
