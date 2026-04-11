@@ -31,10 +31,10 @@ class clientCard extends StatelessWidget {
 
   Color _priorityBg(String p) {
     switch (p) {
-      case 'VIP':      return const Color(0xFFFFB86C).withOpacity(0.12);
-      case 'Active':   return AppColors.success.withOpacity(0.10);
+      case 'VIP':      return const Color(0xFFFFB86C).withValues(alpha: 0.12);
+      case 'Active':   return AppColors.success.withValues(alpha: 0.10);
       case 'Inactive': return AppColors.border;
-      default:         return AppColors.secondary.withOpacity(0.10);
+      default:         return AppColors.secondary.withValues(alpha: 0.10);
     }
   }
 

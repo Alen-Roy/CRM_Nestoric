@@ -1,8 +1,6 @@
 import 'package:crm/models/activity_model.dart';
-import 'package:crm/models/lead_model.dart';
 import 'package:crm/repositories/activity_repository.dart';
 import 'package:crm/repositories/lead_repository.dart';
-import 'package:crm/viewmodels/lead_detail_viewmodel.dart';
 import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -13,6 +11,7 @@ final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
 });
 
 // ── Activities stream — scoped to a leadId (family provider) ─────────────────
+// Usage: ref.watch(activitiesProvider('leadId123'))
 final activitiesProvider =
     StreamProvider.family<List<ActivityModel>, String>((ref, leadId) {
   final repo = ref.watch(activityRepositoryProvider);
@@ -20,6 +19,8 @@ final activitiesProvider =
 });
 
 // ── Log Activity Notifier ─────────────────────────────────────────────────────
+// Saves the activity AND stamps lastContactedAt on the lead so the
+// follow-up reminder resets immediately after any interaction.
 class LogActivityNotifier extends Notifier<AsyncValue<void>> {
   late final ActivityRepository _activityRepo;
   late final LeadRepository _leadRepo;
@@ -31,11 +32,8 @@ class LogActivityNotifier extends Notifier<AsyncValue<void>> {
     return const AsyncValue.data(null);
   }
 
-  // Saves the activity AND stamps lastContactedAt on the lead so the
-  // follow-up reminder resets immediately after any interaction.
   Future<void> logActivity({
-    LeadModel? lead,
-    String? leadId,
+    required String leadId,
     required ActivityType type,
     String? outcome,
     String? notes,
@@ -45,26 +43,21 @@ class LogActivityNotifier extends Notifier<AsyncValue<void>> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception('Not authenticated');
 
-      final now = DateTime.now();
-
-      final id = lead?.id ?? leadId;
-      if (id == null || id.isEmpty) throw Exception('Lead ID is required');
-
       // 1. Save the activity
-      final activity = ActivityModel(
-        leadId: id,
+      await _activityRepo.addActivity(ActivityModel(
+        leadId: leadId,
         type: type,
         outcome: outcome,
         notes: notes,
-        createdAt: now,
+        createdAt: DateTime.now(),
         createdBy: user.uid,
-      );
-      await _activityRepo.addActivity(activity);
+      ));
 
-      // 2. Stamp lastContactedAt on the lead (non-blocking — errors swallowed)
-      if (lead != null) {
-        await ref.read(leadDetailProvider.notifier).stampLastContacted(lead);
-      }
+      // 2. Stamp lastContactedAt on the lead so follow-up timer resets.
+      //    Non-blocking — errors are swallowed; the activity was already saved.
+      try {
+        await _leadRepo.stampLastContacted(leadId);
+      } catch (_) {}
 
       state = const AsyncValue.data(null);
     } catch (e, st) {

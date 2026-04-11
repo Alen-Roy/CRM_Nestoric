@@ -4,6 +4,7 @@ import 'package:crm/models/lead_model.dart';
 class LeadRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String _collection = 'leads';
+
   Future<void> addLead(LeadModel lead) async {
     await _firestore.collection(_collection).add(lead.toMap());
   }
@@ -29,12 +30,27 @@ class LeadRepository {
   }
 
   Future<void> updateLead(LeadModel lead) async {
-    if (lead.id == null) throw Exception("Cannot update a lead without an ID");
-
+    if (lead.id == null) throw Exception('Cannot update a lead without an ID');
     await _firestore.collection(_collection).doc(lead.id).update(lead.toMap());
   }
 
   Future<void> deleteLead(String id) async {
     await _firestore.collection(_collection).doc(id).delete();
+  }
+
+  /// Writes only the lastContacted fields — no full LeadModel needed.
+  /// Used when logging an activity from ClientDetailPage where we have
+  /// a leadId but not the full LeadModel in scope.
+  Future<void> stampLastContacted(String leadId) async {
+    final now = DateTime.now();
+    const months = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final display = '${now.day} ${months[now.month]} ${now.year}';
+    await _firestore.collection(_collection).doc(leadId).update({
+      'lastContacted':   display,
+      'lastContactedAt': Timestamp.fromDate(now),
+    });
   }
 }

@@ -1,6 +1,12 @@
 import 'package:crm/core/constants/app_colors.dart';
-import 'package:crm/features/client/pages/home_page.dart';
 import 'package:flutter/material.dart';
+
+class QuickActions {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  const QuickActions({required this.icon, required this.label, this.onTap});
+}
 
 class QuickActionContainers extends StatelessWidget {
   const QuickActionContainers({super.key, required this.quickActions});
@@ -33,7 +39,7 @@ class QuickActionContainers extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),

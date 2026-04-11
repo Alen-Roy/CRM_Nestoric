@@ -1,6 +1,4 @@
 import 'package:crm/core/constants/app_colors.dart';
-import 'package:crm/core/widgets/date_slider.dart';
-import 'package:crm/core/widgets/task_card.dart';
 import 'package:crm/features/client/pages/task_add_page.dart';
 import 'package:crm/models/task_model.dart';
 import 'package:crm/viewmodels/task_viewmodel.dart';
@@ -10,14 +8,16 @@ import 'package:intl/intl.dart';
 
 class TaskPage extends ConsumerStatefulWidget {
   const TaskPage({super.key});
-
   @override
   ConsumerState<TaskPage> createState() => _TaskPageState();
 }
 
 class _TaskPageState extends ConsumerState<TaskPage> {
   int _selectedIndex = 0;
-  static final DateFormat _fullDayFormat = DateFormat('EEEE, MMM d');
+  static final DateFormat _dayFormat = DateFormat('d');
+  static final DateFormat _dayNameFormat = DateFormat('EEE');
+  static final DateFormat _fullFormat = DateFormat('EEEE, MMM d');
+  static final DateFormat _timeFormat = DateFormat('hh:mm a');
 
   final List<DateTime> _dates = List.generate(60, (i) => DateTime.now().add(Duration(days: i)));
 
@@ -31,7 +31,18 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
   String get _selectedDateLabel {
     if (_selectedIndex == 0) return 'Today';
-    return _fullDayFormat.format(_dates[_selectedIndex]);
+    return _fullFormat.format(_dates[_selectedIndex]);
+  }
+
+  // Card color scheme — cycles through 3 variants
+  _CardScheme _scheme(int index, bool isDone) {
+    if (isDone) return const _CardScheme(bg: Color(0xFFF0F0F0), fg: AppColors.textLight, tag: AppColors.textLight, tagBg: Color(0xFFE0E0E0));
+    final schemes = [
+      const _CardScheme(bg: AppColors.cardDark,    fg: Colors.white,       tag: Colors.white,       tagBg: Color(0xFF2D3358)),
+      const _CardScheme(bg: AppColors.primaryLight, fg: AppColors.primary,  tag: AppColors.primary,  tagBg: Color(0xFFD9D2FF)),
+      const _CardScheme(bg: AppColors.primary,      fg: Colors.white,       tag: Colors.white,       tagBg: Color(0xFF5549C0)),
+    ];
+    return schemes[index % schemes.length];
   }
 
   @override
@@ -40,102 +51,355 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: Padding(
-        padding: const EdgeInsets.only(right: 4, bottom: 80),
-        child: FloatingActionButton(
-          onPressed: () async {
-            await Navigator.push(context, MaterialPageRoute(builder: (_) => TaskAddPage(selectedDate: _dates[_selectedIndex])));
-          },
-          backgroundColor: AppColors.primary,
-          elevation: 4,
-          child: const Icon(Icons.add, color: Colors.white),
-        ),
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              const Text('Tasks', style: TextStyle(color: AppColors.textDark, fontSize: 26, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 16),
-              DateSlider(dates: _dates, selectedIndex: _selectedIndex, onDateSelected: (i) => setState(() => _selectedIndex = i)),
-              const SizedBox(height: 18),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 250),
-                style: const TextStyle(color: AppColors.textMid, fontSize: 16, fontWeight: FontWeight.w600),
-                child: Text(_selectedDateLabel),
-              ),
-              const SizedBox(height: 12),
-              Expanded(
-                child: tasksAsync.when(
-                  data: (tasks) {
-                    final filtered = _filteredTasks(tasks);
-                    if (filtered.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(color: AppColors.primaryLight, shape: BoxShape.circle),
-                              child: const Icon(Icons.task_alt_rounded, color: AppColors.primary, size: 36),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text('No tasks for this day', style: TextStyle(color: AppColors.textMid, fontSize: 15, fontWeight: FontWeight.w500)),
-                            const SizedBox(height: 6),
-                            const Text('Tap + to add a new task', style: TextStyle(color: AppColors.textLight, fontSize: 13)),
-                          ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ───────────────────────────────────────────────
+                  Row(
+                    children: [
+                      const Text('Tasks', style: TextStyle(color: AppColors.textDark, fontSize: 34, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                      const Spacer(),
+                      // Calendar icon button
+                      _iconBtn(Icons.calendar_today_outlined, () {}),
+                      const SizedBox(width: 8),
+                      // Add button
+                      GestureDetector(
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskAddPage(selectedDate: _dates[_selectedIndex]))),
+                        child: Container(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(12)),
+                          child: const Icon(Icons.add, color: Colors.white, size: 22),
                         ),
-                      );
-                    }
-                    return ListView.separated(
-                      padding: const EdgeInsets.only(top: 4, bottom: 120),
-                      itemCount: filtered.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) {
-                        final task = filtered[index];
-                        return TaskCard(
-                          task: task,
-                          scheduledAt: task.scheduledAt,
-                          onToggle: () => ref.read(taskActionProvider.notifier).toggleTask(task),
-                          onDelete: () {
-                            showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                backgroundColor: AppColors.surface,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                                title: const Text('Delete Task?', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700)),
-                                content: const Text('Are you sure you want to delete this task?', style: TextStyle(color: AppColors.textMid)),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: const Text('Cancel', style: TextStyle(color: AppColors.textMid)),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      if (task.id != null) ref.read(taskActionProvider.notifier).deleteTask(task.id!);
-                                    },
-                                    child: const Text('Delete', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Date tabs ────────────────────────────────────────────
+                  SizedBox(
+                    height: 76,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _dates.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (_, i) {
+                        final isSelected = _selectedIndex == i;
+                        final d = _dates[i];
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedIndex = i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 54,
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary : AppColors.surface,
+                              borderRadius: BorderRadius.circular(18),
+                              boxShadow: isSelected
+                                  ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))]
+                                  : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  _dayNameFormat.format(d).toUpperCase(),
+                                  style: TextStyle(color: isSelected ? Colors.white70 : AppColors.textLight, fontSize: 10, fontWeight: FontWeight.w600),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  _dayFormat.format(d),
+                                  style: TextStyle(color: isSelected ? Colors.white : AppColors.textDark, fontSize: 20, fontWeight: FontWeight.w800),
+                                ),
+                              ],
+                            ),
+                          ),
                         );
                       },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 20),
+
+            // ── All-time stats banner ─────────────────────────────────────
+            tasksAsync.when(
+              data: (tasks) => _StatsBanner(tasks: tasks),
+              loading: () => const _StatsBanner(tasks: []),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ── Today Tasks header ────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  Text(_selectedDateLabel, style: const TextStyle(color: AppColors.textDark, fontSize: 18, fontWeight: FontWeight.w700)),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TaskAddPage(selectedDate: _dates[_selectedIndex]))),
+                    child: Container(
+                      width: 30, height: 30,
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(9)),
+                      child: const Icon(Icons.add, color: AppColors.primary, size: 18),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ── Task list ─────────────────────────────────────────────────
+            Expanded(
+              child: tasksAsync.when(
+                data: (tasks) {
+                  final filtered = _filteredTasks(tasks);
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 80, height: 80,
+                            decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(24)),
+                            child: const Icon(Icons.task_alt_rounded, color: AppColors.primary, size: 40),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('No tasks for this day', style: TextStyle(color: AppColors.textMid, fontSize: 16, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
+                          const Text('Tap + to add a new task', style: TextStyle(color: AppColors.textLight, fontSize: 13)),
+                        ],
+                      ),
+                    );
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) {
+                      final task = filtered[i];
+                      final scheme = _scheme(i, task.isDone);
+                      return _PremiumTaskCard(
+                        task: task,
+                        scheme: scheme,
+                        timeLabel: _timeFormat.format(task.scheduledAt),
+                        onToggle: () => ref.read(taskActionProvider.notifier).toggleTask(task),
+                        onDelete: () => _confirmDelete(context, task),
+                      );
+                    },
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+                error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, TaskModel task) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        title: const Text('Delete Task?', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700)),
+        content: Text('"${task.title}" will be removed.', style: const TextStyle(color: AppColors.textMid)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel', style: TextStyle(color: AppColors.textMid))),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (task.id != null) ref.read(taskActionProvider.notifier).deleteTask(task.id!);
+            },
+            child: const Text('Delete', style: TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _iconBtn(IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40, height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+        ),
+        child: Icon(icon, color: AppColors.textDark, size: 20),
+      ),
+    );
+  }
+}
+
+// ── Card Scheme ───────────────────────────────────────────────────────────────
+class _CardScheme {
+  final Color bg, fg, tag, tagBg;
+  const _CardScheme({required this.bg, required this.fg, required this.tag, required this.tagBg});
+}
+
+// ── Premium Task Card ─────────────────────────────────────────────────────────
+class _PremiumTaskCard extends StatelessWidget {
+  final TaskModel task;
+  final _CardScheme scheme;
+  final String timeLabel;
+  final VoidCallback onToggle;
+  final VoidCallback onDelete;
+
+  const _PremiumTaskCard({
+    required this.task,
+    required this.scheme,
+    required this.timeLabel,
+    required this.onToggle,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      onLongPress: onDelete,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: scheme.bg,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(color: scheme.bg.withOpacity(0.4), blurRadius: 16, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Priority tag
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(color: scheme.tagBg, borderRadius: BorderRadius.circular(20)),
+                    child: Text(task.priority, style: TextStyle(color: scheme.tag, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
+                  const SizedBox(height: 10),
+                  // Task title — large display text
+                  Text(
+                    task.title,
+                    style: TextStyle(
+                      color: scheme.fg,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      height: 1.1,
+                      decoration: task.isDone ? TextDecoration.lineThrough : TextDecoration.none,
+                      decorationColor: scheme.fg.withOpacity(0.5),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 16),
+            // Time column
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text('Start', style: TextStyle(color: scheme.fg.withOpacity(0.6), fontSize: 11, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 4),
+                Text(timeLabel, style: TextStyle(color: scheme.fg, fontSize: 13, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 12),
+                // Toggle button
+                GestureDetector(
+                  onTap: onToggle,
+                  child: Container(
+                    width: 32, height: 32,
+                    decoration: BoxDecoration(
+                      color: scheme.fg.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      task.isDone ? Icons.check_rounded : Icons.radio_button_unchecked_rounded,
+                      color: scheme.fg,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Stats Banner ──────────────────────────────────────────────────────────────
+class _StatsBanner extends StatelessWidget {
+  final List<TaskModel> tasks;
+  const _StatsBanner({required this.tasks});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = tasks.length;
+    final done  = tasks.where((t) => t.isDone).length;
+    final today = DateTime.now();
+    final todayTasks = tasks.where((t) =>
+        t.scheduledAt.year == today.year &&
+        t.scheduledAt.month == today.month &&
+        t.scheduledAt.day == today.day).length;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 4))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('All time Completed', style: TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                _statBox('$total', 'Total Tasks', AppColors.cardDark, Colors.white),
+                const SizedBox(width: 10),
+                _statBox('$done', 'Completed', AppColors.primaryLight, AppColors.primary),
+                const SizedBox(width: 10),
+                _statBox('$todayTasks', "Today's", AppColors.primary, Colors.white),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _statBox(String value, String label, Color bg, Color fg) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(16)),
+        child: Column(children: [
+          Text(value, style: TextStyle(color: fg, fontSize: 22, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 2),
+          Text(label, style: TextStyle(color: fg.withOpacity(0.7), fontSize: 10, fontWeight: FontWeight.w600)),
+        ]),
       ),
     );
   }

@@ -131,57 +131,107 @@ _ReportData _compute(List<LeadModel> leads, List<Map<String, dynamic>> activitie
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-class ReportPage extends ConsumerWidget {
+class ReportPage extends ConsumerStatefulWidget {
   const ReportPage({super.key});
+  @override
+  ConsumerState<ReportPage> createState() => _ReportPageState();
+}
+
+class _ReportPageState extends ConsumerState<ReportPage> {
+  int _tabIndex = 0; // 0=Monthly 1=Yearly
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final leadsAsync = ref.watch(leadsProvider);
+  Widget build(BuildContext context) {
+    final leadsAsync      = ref.watch(leadsProvider);
     final activitiesAsync = ref.watch(_allActivitiesProvider);
 
     final isLoading = leadsAsync.isLoading || activitiesAsync.isLoading;
     final hasError  = leadsAsync.hasError;
 
     if (hasError) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(child: Text('Failed to load report data.', style: TextStyle(color: AppColors.textMid))),
-      );
+      return const Scaffold(backgroundColor: AppColors.background,
+          body: Center(child: Text('Failed to load report data.', style: TextStyle(color: AppColors.textMid))));
     }
 
-    final leads     = leadsAsync.value ?? [];
+    final leads      = leadsAsync.value ?? [];
     final activities = activitiesAsync.value ?? [];
-    final data      = isLoading ? null : _compute(leads, activities);
+    final data       = isLoading ? null : _compute(leads, activities);
+
+    String fmtMoney(double v) {
+      if (v >= 100000) return '₹${(v / 100000).toStringAsFixed(1)}L';
+      if (v >= 1000)   return '₹${(v / 1000).toStringAsFixed(1)}k';
+      return '₹${v.toStringAsFixed(0)}';
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 110),
           children: [
             // ── Header ─────────────────────────────────────────────────────
-            const Text('Reports',
-                style: TextStyle(color: AppColors.textDark, fontSize: 26, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text(
-              isLoading ? 'Loading your data…' : '${leads.length} leads · ${activities.length} activities',
-              style: const TextStyle(color: AppColors.textLight, fontSize: 13),
+            Row(
+              children: [
+                const Text('Finance Overview',
+                    style: TextStyle(color: AppColors.textDark, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)]),
+                  child: const Icon(Icons.edit_outlined, color: AppColors.textMid, size: 18),
+                ),
+              ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // ── KPI row ────────────────────────────────────────────────────
+            // ── Period tabs ─────────────────────────────────────────────────
+            _TabRow(selected: _tabIndex, labels: const ['Monthly', 'Yearly'], onSelect: (i) => setState(() => _tabIndex = i)),
+            const SizedBox(height: 24),
+
+            // ── Big revenue number ──────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 6))],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text('${data == null ? 'N/A' : leads.where((l)=>l.stage=='Won').length.toString()} Won Deals',
+                        style: const TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(20)),
+                      child: Text(_tabIndex == 0 ? 'Monthly' : 'Yearly',
+                          style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700)),
+                    ),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text(data == null ? '—' : fmtMoney(data.totalRevenue),
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 46, fontWeight: FontWeight.w800, letterSpacing: -1.5)),
+                  const SizedBox(height: 4),
+                  Text('Total revenue from won deals', style: const TextStyle(color: AppColors.textLight, fontSize: 12)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── KPI row ─────────────────────────────────────────────────────
             _KpiRow(data: data),
             const SizedBox(height: 16),
 
-            // ── Revenue bar chart ──────────────────────────────────────────
+            // ── Monthly revenue chart ───────────────────────────────────────
             _card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _cardTitle('Monthly Revenue', Icons.bar_chart_rounded),
                   const SizedBox(height: 4),
-                  const Text('Won deals by month (₹)',
-                      style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                  const Text('Won deals by month (₹)', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
                   const SizedBox(height: 20),
                   SizedBox(
                     height: 180,
@@ -194,7 +244,50 @@ class ReportPage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── Pipeline donut ─────────────────────────────────────────────
+            // ── Yearly Goal card ────────────────────────────────────────────
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 4))],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    const Text('Yearly Revenue Goal', style: TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.flag_outlined, color: AppColors.primary, size: 16),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+                  Text(data == null ? '—' : fmtMoney(data.totalRevenue * 3),
+                      style: const TextStyle(color: AppColors.textDark, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                  const SizedBox(height: 12),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: data == null ? 0 : ((data.totalRevenue / (data.totalRevenue * 3 + 1)).clamp(0.0, 1.0)),
+                      backgroundColor: AppColors.border,
+                      color: AppColors.primary,
+                      minHeight: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    _dot(AppColors.primary, 'Earned ${data == null ? "0" : (data.totalRevenue / (data.totalRevenue * 3 + 1) * 100).toStringAsFixed(0)}%'),
+                    const Spacer(),
+                    _dot(AppColors.border, 'Goal not achieved'),
+                  ]),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // ── Pipeline donut ──────────────────────────────────────────────
             _card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -209,7 +302,7 @@ class ReportPage extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // ── Activity breakdown ─────────────────────────────────────────
+            // ── Activity breakdown ──────────────────────────────────────────
             _card(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,36 +315,73 @@ class ReportPage extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(height: 100),
           ],
         ),
       ),
     );
   }
 
+  Widget _dot(Color c, String label) => Row(children: [
+    Container(width: 8, height: 8, decoration: BoxDecoration(color: c, shape: BoxShape.circle)),
+    const SizedBox(width: 4),
+    Text(label, style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+  ]);
+
   Widget _cardTitle(String title, IconData icon) {
-    return Row(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
-          child: Icon(icon, color: AppColors.primary, size: 18),
-        ),
-        const SizedBox(width: 10),
-        Text(title, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 16)),
-      ],
-    );
+    return Row(children: [
+      Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
+        child: Icon(icon, color: AppColors.primary, size: 18),
+      ),
+      const SizedBox(width: 10),
+      Text(title, style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 16)),
+    ]);
   }
 
   static Widget _card({required Widget child}) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 16, offset: const Offset(0, 5))],
       ),
       child: child,
+    );
+  }
+}
+
+// ── Tab Row ───────────────────────────────────────────────────────────────────
+class _TabRow extends StatelessWidget {
+  final int selected;
+  final List<String> labels;
+  final ValueChanged<int> onSelect;
+  const _TabRow({required this.selected, required this.labels, required this.onSelect});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)]),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: labels.asMap().entries.map((e) {
+          final isSel = selected == e.key;
+          return GestureDetector(
+            onTap: () => onSelect(e.key),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: isSel ? AppColors.primary : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(e.value, style: TextStyle(color: isSel ? Colors.white : AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w600)),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
@@ -269,44 +399,35 @@ class _KpiRow extends StatelessWidget {
       return '₹${v.toStringAsFixed(0)}';
     }
 
-    final kpis = [
-      _KpiData('Win Rate',   data == null ? '—' : '${data!.winRate.toStringAsFixed(0)}%', AppColors.success),
-      _KpiData('Revenue',    data == null ? '—' : fmtMoney(data!.totalRevenue),           AppColors.primary),
-      _KpiData('Avg Deal',   data == null ? '—' : fmtMoney(data!.avgDealSize),            AppColors.accent3),
-    ];
+    return Row(children: [
+      _kpiCard('Win Rate',  data == null ? '—' : '${data!.winRate.toStringAsFixed(0)}%', AppColors.success),
+      const SizedBox(width: 10),
+      _kpiCard('Avg Deal',  data == null ? '—' : fmtMoney(data!.avgDealSize), AppColors.primary),
+      const SizedBox(width: 10),
+      _kpiCard('Lost',      data == null ? '—' : '${data!.lostLeads}', AppColors.danger),
+    ]);
+  }
 
-    return Row(
-      children: kpis.map((k) => Expanded(
-        child: Container(
-          margin: const EdgeInsets.only(right: 10),
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(k.value,
-                  style: TextStyle(color: k.color, fontSize: 20, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 2),
-              Text(k.label,
-                  style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
-            ],
-          ),
+  Widget _kpiCard(String label, String value, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
         ),
-      )).toList()
-        ..last,
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(color: AppColors.textLight, fontSize: 11, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 6),
+          Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Container(height: 3, decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
+              child: FractionallySizedBox(widthFactor: 0.6, child: Container(decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))))),
+        ]),
+      ),
     );
   }
-}
-
-class _KpiData {
-  final String label;
-  final String value;
-  final Color color;
-  const _KpiData(this.label, this.value, this.color);
 }
 
 // ── Revenue Bar Chart ─────────────────────────────────────────────────────────

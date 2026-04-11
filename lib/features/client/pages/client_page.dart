@@ -1,14 +1,13 @@
 import 'package:crm/core/constants/app_colors.dart';
-import 'package:crm/core/widgets/custome_search.dart';
 import 'package:crm/features/client/pages/client_detail_page.dart';
 import 'package:crm/models/client_model.dart';
 import 'package:crm/viewmodels/client_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class ClientPage extends ConsumerStatefulWidget {
   const ClientPage({super.key});
-
   @override
   ConsumerState<ClientPage> createState() => _ClientPageState();
 }
@@ -17,38 +16,33 @@ class _ClientPageState extends ConsumerState<ClientPage> {
   final List<String> _statuses = const ['All', 'Active', 'VIP', 'Inactive', 'Completed'];
   int _selectedStatus = 0;
   String _searchQuery = '';
+  bool _showSearch = false;
+  final _controller = TextEditingController();
 
-  List<ClientModel> _filteredClients(List<ClientModel> clients) {
-    List<ClientModel> result = _selectedStatus == 0
+  List<ClientModel> _filtered(List<ClientModel> clients) {
+    List<ClientModel> r = _selectedStatus == 0
         ? clients
         : clients.where((c) => c.status == _statuses[_selectedStatus]).toList();
     if (_searchQuery.isNotEmpty) {
-      result = result.where((c) =>
+      r = r.where((c) =>
           c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
           (c.companyName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)).toList();
     }
-    return result;
+    return r;
   }
 
-  Color _statusColor(String status) {
-    switch (status) {
-      case ClientStatus.vip:      return AppColors.accent3;
-      case ClientStatus.active:   return AppColors.success;
-      case ClientStatus.inactive: return AppColors.textLight;
+  Color _statusColor(String s) {
+    switch (s) {
+      case ClientStatus.vip:       return AppColors.accent3;
+      case ClientStatus.active:    return AppColors.success;
+      case ClientStatus.inactive:  return AppColors.textLight;
       case ClientStatus.completed: return AppColors.secondary;
-      default:                    return AppColors.textLight;
+      default:                     return AppColors.textLight;
     }
   }
 
-  Color _statusBg(String status) {
-    switch (status) {
-      case ClientStatus.vip:      return AppColors.accent3.withOpacity(0.12);
-      case ClientStatus.active:   return AppColors.success.withOpacity(0.10);
-      case ClientStatus.inactive: return AppColors.border;
-      case ClientStatus.completed: return AppColors.secondary.withOpacity(0.10);
-      default:                    return AppColors.border;
-    }
-  }
+  @override
+  void dispose() { _controller.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
@@ -57,119 +51,172 @@ class _ClientPageState extends ConsumerState<ClientPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              const Text('Clients', style: TextStyle(color: AppColors.textDark, fontSize: 26, fontWeight: FontWeight.w800)),
-              CustomeSearch(hint: 'Search clients...', onChanged: (v) => setState(() => _searchQuery = v)),
-              const SizedBox(height: 14),
-              SizedBox(
-                height: 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _statuses.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final isSelected = _selectedStatus == index;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedStatus = index),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ───────────────────────────────────────────────
+                  Row(children: [
+                    const Text('Clients', style: TextStyle(color: AppColors.textDark, fontSize: 34, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => setState(() { _showSearch = !_showSearch; if (!_showSearch) { _searchQuery = ''; _controller.clear(); } }),
+                      child: Container(
+                        width: 40, height: 40,
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: isSelected
-                              ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))]
-                              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
+                          color: _showSearch ? AppColors.primary : AppColors.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
                         ),
-                        child: Text(
-                          _statuses[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.textMid,
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                          ),
+                        child: Icon(Icons.search_rounded, color: _showSearch ? Colors.white : AppColors.textDark, size: 20),
+                      ),
+                    ),
+                  ]),
+
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 250),
+                    firstChild: const SizedBox(height: 14),
+                    secondChild: Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 2),
+                      child: TextField(
+                        controller: _controller,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        autofocus: true,
+                        style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                        cursorColor: AppColors.primary,
+                        decoration: InputDecoration(
+                          hintText: 'Search clients...',
+                          hintStyle: const TextStyle(color: AppColors.textLight),
+                          prefixIcon: const Icon(Icons.search, color: AppColors.textLight, size: 20),
+                          filled: true, fillColor: AppColors.surface,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: clientsAsync.when(
-                  data: (clients) {
-                    final shown = _filteredClients(clients);
-                    if (shown.isEmpty) {
-                      return const Center(child: Text('No clients found.', style: TextStyle(color: AppColors.textLight, fontSize: 15)));
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(top: 8, bottom: 100),
-                      itemCount: shown.length,
-                      itemBuilder: (context, index) {
-                        final client = shown[index];
-                        final statusColor = _statusColor(client.status);
-                        final statusBg = _statusBg(client.status);
+                    ),
+                    crossFadeState: _showSearch ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // ── Filter pills ─────────────────────────────────────────
+                  SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _statuses.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final isSel = _selectedStatus == i;
                         return GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => ClientDetailPage(client: client))),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
+                          onTap: () => setState(() => _selectedStatus = i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
+                              color: isSel ? AppColors.primary : AppColors.surface,
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: isSel
+                                  ? [BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 10, offset: const Offset(0, 4))]
+                                  : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
                             ),
-                            child: Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 22,
-                                  backgroundColor: AppColors.primaryLight,
-                                  child: Text(
-                                    client.name[0].toUpperCase(),
-                                    style: const TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(client.name, style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700)),
-                                      if (client.companyName != null)
-                                        Text(client.companyName!, style: const TextStyle(color: AppColors.textMid, fontSize: 12)),
-                                      if (client.monthlyValue != null)
-                                        Text(
-                                          '₹${client.monthlyValue!.toStringAsFixed(0)}',
-                                          style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w600),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(20)),
-                                  child: Text(client.status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
-                                ),
-                              ],
-                            ),
+                            child: Text(_statuses[i], style: TextStyle(color: isSel ? Colors.white : AppColors.textMid, fontSize: 13, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500)),
                           ),
                         );
                       },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  error: (err, _) => Center(child: Text('Error: $err', style: const TextStyle(color: AppColors.danger))),
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 14),
+
+            // ── Client list ───────────────────────────────────────────────
+            Expanded(
+              child: clientsAsync.when(
+                data: (clients) {
+                  final shown = _filtered(clients);
+                  if (shown.isEmpty) {
+                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Container(width: 70, height: 70, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(22)),
+                          child: const Icon(Symbols.person, color: AppColors.primary, size: 34)),
+                      const SizedBox(height: 14),
+                      const Text('No clients found', style: TextStyle(color: AppColors.textMid, fontSize: 16, fontWeight: FontWeight.w600)),
+                    ]));
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+                    itemCount: shown.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) => _ClientCard(client: shown[i], statusColor: _statusColor(shown[i].status)),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+                error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+}
+
+class _ClientCard extends StatelessWidget {
+  final ClientModel client;
+  final Color statusColor;
+  const _ClientCard({required this.client, required this.statusColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClientDetailPage(client: client))),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 4))],
+        ),
+        child: Row(children: [
+          // Avatar with status ring
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: statusColor, width: 2),
+            ),
+            child: CircleAvatar(
+              radius: 22,
+              backgroundColor: AppColors.primaryLight,
+              child: Text(client.name[0].toUpperCase(), style: const TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.w800)),
+            ),
+          ),
+          const SizedBox(width: 14),
+          // Info
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(client.name, style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700)),
+            if (client.companyName != null)
+              Text(client.companyName!, style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
+            const SizedBox(height: 4),
+            if (client.monthlyValue != null)
+              Row(children: [
+                const Icon(Symbols.currency_rupee, color: AppColors.success, size: 13),
+                Text('${client.monthlyValue!.toStringAsFixed(0)}/mo', style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w600)),
+              ]),
+          ])),
+          // Status badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(50)),
+            child: Text(client.status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
+          ),
+        ]),
       ),
     );
   }

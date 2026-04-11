@@ -18,7 +18,7 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
 
   @override
   AsyncValue<void> build() {
-    _repo = ref.watch(leadRepositoryProvider);
+    _repo       = ref.watch(leadRepositoryProvider);
     _clientRepo = ref.watch(clientRepositoryProvider);
     return const AsyncValue.data(null);
   }
@@ -36,7 +36,6 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
       );
       await _repo.updateLead(updated);
 
-      // Auto-create client when moved to Won
       if (newStage == 'Won') {
         await _clientRepo.createFromLead(updated);
       }
@@ -46,20 +45,6 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       return null;
-    }
-  }
-
-  // ── Stamp lastContactedAt on a lead after an activity is logged ───────────
-  // Called by LogActivityNotifier so the follow-up reminder resets automatically.
-  Future<void> stampLastContacted(LeadModel lead) async {
-    try {
-      final now = DateTime.now();
-      await _repo.updateLead(lead.copyWith(
-        lastContacted: _formatDate(now),
-        lastContactedAt: now,
-      ));
-    } catch (_) {
-      // Non-critical — silently swallow; the activity was already saved.
     }
   }
 
@@ -95,9 +80,7 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
 }
 
 // ── Stage order and metadata ──────────────────────────────────────────────────
-const List<String> leadStages = [
-  'New', 'Proposal', 'Negotiation', 'Won', 'Lost',
-];
+const List<String> leadStages = ['New', 'Proposal', 'Negotiation', 'Won', 'Lost'];
 
 String? nextStage(String currentStage) {
   const progression = {

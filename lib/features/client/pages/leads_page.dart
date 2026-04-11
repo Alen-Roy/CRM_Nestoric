@@ -1,15 +1,13 @@
 import 'package:crm/core/constants/app_colors.dart';
-import 'package:crm/core/widgets/custome_search.dart';
-import 'package:crm/core/widgets/leads_card.dart';
 import 'package:crm/features/client/pages/lead_detail_page.dart';
 import 'package:crm/models/lead_model.dart';
 import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 class LeadsPage extends ConsumerStatefulWidget {
   const LeadsPage({super.key});
-
   @override
   ConsumerState<LeadsPage> createState() => _LeadsPageState();
 }
@@ -18,13 +16,31 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
   final List<String> _stages = const ['All', 'New', 'Proposal', 'Negotiation', 'Won'];
   int _selectedStage = 0;
   String _searchQuery = '';
+  bool _showSearch = false;
+  final _searchController = TextEditingController();
 
   List<LeadModel> _filteredLeads(List<LeadModel> leads) {
     List<LeadModel> result = _selectedStage == 0 ? leads : leads.where((l) => l.stage == _stages[_selectedStage]).toList();
     if (_searchQuery.isNotEmpty) {
-      result = result.where((l) => l.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+      result = result.where((l) => l.name.toLowerCase().contains(_searchQuery.toLowerCase()) || (l.companyName?.toLowerCase().contains(_searchQuery.toLowerCase()) ?? false)).toList();
     }
     return result;
+  }
+
+  Color _stageColor(String s) {
+    switch (s) {
+      case 'Won':         return AppColors.success;
+      case 'Proposal':    return AppColors.warning;
+      case 'Negotiation': return AppColors.primary;
+      case 'New':         return AppColors.secondary;
+      default:            return AppColors.textLight;
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -34,94 +50,187 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              const Text('Leads', style: TextStyle(color: AppColors.textDark, fontSize: 26, fontWeight: FontWeight.w800)),
-              CustomeSearch(hint: 'Search leads...', onChanged: (v) => setState(() => _searchQuery = v)),
-              const SizedBox(height: 14),
-              // Filter chips
-              SizedBox(
-                height: 36,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _stages.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final isSelected = _selectedStage == index;
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedStage = index),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        alignment: Alignment.center,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary : AppColors.surface,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: isSelected
-                              ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))]
-                              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4, offset: const Offset(0, 2))],
-                        ),
-                        child: Text(
-                          _stages[index],
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.textMid,
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Header ───────────────────────────────────────────────
+                  Row(
+                    children: [
+                      const Text('Leads', style: TextStyle(color: AppColors.textDark, fontSize: 34, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => setState(() { _showSearch = !_showSearch; if (!_showSearch) { _searchQuery = ''; _searchController.clear(); } }),
+                        child: Container(
+                          width: 40, height: 40,
+                          decoration: BoxDecoration(
+                            color: _showSearch ? AppColors.primary : AppColors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
                           ),
+                          child: Icon(Icons.search_rounded, color: _showSearch ? Colors.white : AppColors.textDark, size: 20),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 10),
-              Expanded(
-                child: leadsAsync.when(
-                  data: (leads) {
-                    final filtered = _filteredLeads(leads);
-                    if (filtered.isEmpty) {
-                      return const Center(
-                        child: Text('No leads found.', style: TextStyle(color: AppColors.textLight, fontSize: 15)),
-                      );
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(top: 8, bottom: 100),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final lead = filtered[index];
+                    ],
+                  ),
+
+                  // ── Search bar (animated) ─────────────────────────────────
+                  AnimatedCrossFade(
+                    duration: const Duration(milliseconds: 250),
+                    firstChild: const SizedBox(height: 14),
+                    secondChild: Padding(
+                      padding: const EdgeInsets.only(top: 12, bottom: 2),
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        style: const TextStyle(color: AppColors.textDark, fontSize: 14),
+                        cursorColor: AppColors.primary,
+                        autofocus: true,
+                        decoration: InputDecoration(
+                          hintText: 'Search leads...',
+                          hintStyle: const TextStyle(color: AppColors.textLight),
+                          prefixIcon: const Icon(Icons.search, color: AppColors.textLight, size: 20),
+                          filled: true, fillColor: AppColors.surface,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                        ),
+                      ),
+                    ),
+                    crossFadeState: _showSearch ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // ── Filter pills ─────────────────────────────────────────
+                  SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _stages.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (_, i) {
+                        final isSel = _selectedStage == i;
                         return GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeadDetailPage(lead: lead))),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(16),
+                          onTap: () => setState(() => _selectedStage = i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            alignment: Alignment.center,
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
                             decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(18),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 12, offset: const Offset(0, 4))],
+                              color: isSel ? AppColors.primary : AppColors.surface,
+                              borderRadius: BorderRadius.circular(50),
+                              boxShadow: isSel
+                                  ? [BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 10, offset: const Offset(0, 4))]
+                                  : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
                             ),
-                            child: LeadsCard(
-                              name: lead.name,
-                              companyName: lead.companyName ?? '',
-                              email: lead.email ?? '',
-                              phone: lead.phone,
-                              stage: lead.stage,
-                              lastContacted: lead.lastContacted ?? '',
-                            ),
+                            child: Text(_stages[i], style: TextStyle(color: isSel ? Colors.white : AppColors.textMid, fontSize: 13, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500)),
                           ),
                         );
                       },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                  error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
-                ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 14),
+
+            // ── Lead list ─────────────────────────────────────────────────
+            Expanded(
+              child: leadsAsync.when(
+                data: (leads) {
+                  final filtered = _filteredLeads(leads);
+                  if (filtered.isEmpty) {
+                    return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Container(width: 70, height: 70, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(22)), child: const Icon(Symbols.leaderboard, color: AppColors.primary, size: 34)),
+                      const SizedBox(height: 14),
+                      const Text('No leads found', style: TextStyle(color: AppColors.textMid, fontSize: 16, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      const Text('Try a different filter', style: TextStyle(color: AppColors.textLight, fontSize: 13)),
+                    ]));
+                  }
+                  return ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 110),
+                    itemCount: filtered.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, i) => _LeadCard(lead: filtered[i], stageColor: _stageColor(filtered[i].stage)),
+                  );
+                },
+                loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary, strokeWidth: 2)),
+                error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: AppColors.danger))),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LeadCard extends StatelessWidget {
+  final LeadModel lead;
+  final Color stageColor;
+  const _LeadCard({required this.lead, required this.stageColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LeadDetailPage(lead: lead))),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 4))],
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 50, height: 50,
+              decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(16)),
+              child: Center(child: Text(lead.name[0].toUpperCase(), style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.w800))),
+            ),
+            const SizedBox(width: 14),
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(lead.name, style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(lead.companyName ?? lead.phone, style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    const Icon(Symbols.call, color: AppColors.textLight, size: 12),
+                    const SizedBox(width: 4),
+                    Text(lead.phone, style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+                    if (lead.lastContacted != null && lead.lastContacted!.isNotEmpty) ...[
+                      const SizedBox(width: 10),
+                      const Icon(Symbols.calendar_today, color: AppColors.textLight, size: 12),
+                      const SizedBox(width: 4),
+                      Text(lead.lastContacted!, style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+                    ],
+                  ]),
+                ],
+              ),
+            ),
+            // Stage badge + amount
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(color: stageColor.withOpacity(0.1), borderRadius: BorderRadius.circular(50)),
+                child: Text(lead.stage, style: TextStyle(color: stageColor, fontSize: 11, fontWeight: FontWeight.w700)),
+              ),
+              if (lead.amount != null && lead.amount!.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text('₹${lead.amount}', style: const TextStyle(color: AppColors.success, fontSize: 13, fontWeight: FontWeight.w700)),
+              ],
+            ]),
+          ],
         ),
       ),
     );

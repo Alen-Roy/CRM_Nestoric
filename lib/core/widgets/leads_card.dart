@@ -31,10 +31,10 @@ class LeadsCard extends StatelessWidget {
 
   Color _stageBg(String s) {
     switch (s) {
-      case 'Won':       return AppColors.success.withOpacity(0.1);
-      case 'Proposal':  return AppColors.warning.withOpacity(0.1);
+      case 'Won':       return AppColors.success.withValues(alpha: 0.1);
+      case 'Proposal':  return AppColors.warning.withValues(alpha: 0.1);
       case 'Negotiation': return AppColors.primaryLight;
-      case 'New':       return AppColors.secondary.withOpacity(0.1);
+      case 'New':       return AppColors.secondary.withValues(alpha: 0.1);
       default:          return AppColors.border;
     }
   }

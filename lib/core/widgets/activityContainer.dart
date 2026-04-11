@@ -1,6 +1,14 @@
 import 'package:crm/core/constants/app_colors.dart';
-import 'package:crm/features/client/pages/home_page.dart';
 import 'package:flutter/material.dart';
+
+class GridItem {
+  final IconData icon;
+  final Color accent;
+  final String total;
+  final String desc;
+  final String info;
+  const GridItem({required this.icon, required this.accent, required this.total, required this.desc, required this.info});
+}
 
 class ActivityContainers extends StatelessWidget {
   const ActivityContainers({super.key, required this.gridItems});
@@ -29,12 +37,12 @@ class ActivityContainers extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: item.accent.withOpacity(0.10),
+                color: item.accent.withValues(alpha: 0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 6),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -49,7 +57,7 @@ class ActivityContainers extends StatelessWidget {
                 width: 44,
                 padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
-                  color: item.accent.withOpacity(0.12),
+                  color: item.accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(item.icon, size: 20, color: item.accent),
@@ -77,7 +85,7 @@ class ActivityContainers extends StatelessWidget {
                 item.info,
                 style: TextStyle(
                   fontSize: 11,
-                  color: item.accent.withOpacity(0.85),
+                  color: item.accent.withValues(alpha: 0.85),
                 ),
               ),
             ],
