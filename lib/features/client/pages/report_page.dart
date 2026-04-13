@@ -400,7 +400,7 @@ class _KpiRow extends StatelessWidget {
     }
 
     return Row(children: [
-      _kpiCard('Win Rate',  data == null ? '—' : '${data!.winRate.toStringAsFixed(0)}%', AppColors.success),
+      _kpiCard('Win Rate',  data == null ? '—' : '${data!.winRate.toStringAsFixed(0)}%', AppColors.primary),
       const SizedBox(width: 10),
       _kpiCard('Avg Deal',  data == null ? '—' : fmtMoney(data!.avgDealSize), AppColors.primary),
       const SizedBox(width: 10),
@@ -510,7 +510,7 @@ class _RevenueBarChart extends StatelessWidget {
               else if (v >= 1000) label = '₹${(v / 1000).toStringAsFixed(1)}k';
               else label = '₹${v.toStringAsFixed(0)}';
               return BarTooltipItem(label,
-                  const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12));
+                  const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 12));
             },
           ),
         ),
@@ -525,9 +525,9 @@ class _PipelineDonut extends StatelessWidget {
   const _PipelineDonut({required this.data});
 
   static const _colors = {
-    'Won':         AppColors.success,
-    'In Progress': AppColors.warning,
-    'New':         AppColors.secondary,
+    'Won':         AppColors.primary,
+    'In Progress': AppColors.primarySoft,
+    'New':         AppColors.primaryGlow,
     'Lost':        AppColors.danger,
   };
 
@@ -605,12 +605,12 @@ class _ActivityBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const meta = {
-      'call':     ('📞', 'Calls',     AppColors.secondary),
-      'meeting':  ('🤝', 'Meetings',  AppColors.primary),
-      'email':    ('📧', 'Emails',    AppColors.accent3),
-      'proposal': ('📄', 'Proposals', AppColors.accent2),
-      'note':     ('📝', 'Notes',     AppColors.textMid),
+    final meta = {
+      'call':     (Icons.call_rounded,        'Calls',     AppColors.primaryGlow),
+      'meeting':  (Icons.handshake_rounded,   'Meetings',  AppColors.primary),
+      'email':    (Icons.mail_rounded,        'Emails',    AppColors.danger),
+      'proposal': (Icons.description_rounded, 'Proposals', AppColors.primaryMid),
+      'note':     (Icons.edit_note_rounded,   'Notes',     AppColors.textMid),
     };
 
     final total = data.activityCounts.values.fold(0, (a, b) => a + b);
@@ -638,8 +638,12 @@ class _ActivityBreakdown extends StatelessWidget {
           padding: const EdgeInsets.only(bottom: 10),
           child: Row(
             children: [
-              SizedBox(width: 28, child: Text(emoji, style: const TextStyle(fontSize: 16))),
-              const SizedBox(width: 6),
+              Container(
+                width: 30, height: 30,
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(emoji, color: color, size: 16),
+              ),
+              const SizedBox(width: 8),
               SizedBox(
                 width: 72,
                 child: Text(label,

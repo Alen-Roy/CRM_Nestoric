@@ -33,10 +33,10 @@ class _ClientPageState extends ConsumerState<ClientPage> {
 
   Color _statusColor(String s) {
     switch (s) {
-      case ClientStatus.vip:       return AppColors.accent3;
-      case ClientStatus.active:    return AppColors.success;
+      case ClientStatus.vip:       return AppColors.primaryMid;
+      case ClientStatus.active:    return AppColors.primary;
       case ClientStatus.inactive:  return AppColors.textLight;
-      case ClientStatus.completed: return AppColors.secondary;
+      case ClientStatus.completed: return AppColors.primaryGlow;
       default:                     return AppColors.textLight;
     }
   }
@@ -206,8 +206,8 @@ class _ClientCard extends StatelessWidget {
             const SizedBox(height: 4),
             if (client.monthlyValue != null)
               Row(children: [
-                const Icon(Symbols.currency_rupee, color: AppColors.success, size: 13),
-                Text('${client.monthlyValue!.toStringAsFixed(0)}/mo', style: const TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w600)),
+                const Icon(Symbols.currency_rupee, color: AppColors.primary, size: 13),
+                Text('${client.monthlyValue!.toStringAsFixed(0)}/mo', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
               ]),
           ])),
           // Status badge

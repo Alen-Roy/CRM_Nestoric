@@ -49,8 +49,8 @@ class _LargeTextFieldState extends State<largeTextField> {
           width: _isFocused ? 1.5 : 1.0,
         ),
         boxShadow: _isFocused
-            ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.10), blurRadius: 12, offset: const Offset(0, 4))]
-            : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
+            ? [BoxShadow(color: AppColors.primary.withOpacity(0.10), blurRadius: 12, offset: const Offset(0, 4))]
+            : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2))],
       ),
       child: TextField(
         focusNode:    _focusNode,

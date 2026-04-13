@@ -20,39 +20,32 @@ class clientCard extends StatelessWidget {
   final String lastContacted;
   final String priority;
 
-  Color _priorityColor(String p) {
+  Color _statusColor(String p) {
     switch (p) {
-      case 'VIP':      return const Color(0xFFFFB86C);
-      case 'Active':   return AppColors.success;
+      case 'VIP':      return AppColors.primaryMid;
+      case 'Active':   return AppColors.primary;
       case 'Inactive': return AppColors.textLight;
-      default:         return AppColors.secondary;
-    }
-  }
-
-  Color _priorityBg(String p) {
-    switch (p) {
-      case 'VIP':      return const Color(0xFFFFB86C).withValues(alpha: 0.12);
-      case 'Active':   return AppColors.success.withValues(alpha: 0.10);
-      case 'Inactive': return AppColors.border;
-      default:         return AppColors.secondary.withValues(alpha: 0.10);
+      default:         return AppColors.primaryGlow;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final color    = _statusColor(priority);
+    final initials = name.trim().split(' ')
+        .map((w) => w.isNotEmpty ? w[0] : '').take(2).join('').toUpperCase();
+
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: AppColors.primaryLight,
-          child: Text(
-            name.isNotEmpty ? name[0].toUpperCase() : '?',
-            style: const TextStyle(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
+        // Avatar with status ring
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: color, width: 2)),
+          child: CircleAvatar(
+            radius: 22,
+            backgroundColor: AppColors.primaryLight,
+            child: Text(initials.isEmpty ? '?' : initials,
+                style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700, fontSize: 14)),
           ),
         ),
         const SizedBox(width: 12),
@@ -60,74 +53,29 @@ class clientCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                name,
-                style: const TextStyle(
-                  color: AppColors.textDark,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                companyName,
-                style: const TextStyle(color: AppColors.textMid, fontSize: 13),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Symbols.mail, color: AppColors.textLight, size: 14),
-                  const SizedBox(width: 5),
-                  Flexible(
-                    child: Text(
-                      email,
-                      style: const TextStyle(color: AppColors.textMid, fontSize: 12),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
+              Text(name, style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
+              Text(companyName, style: const TextStyle(color: AppColors.textMid, fontSize: 12),
+                  maxLines: 1, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(Symbols.call, color: AppColors.textLight, size: 14),
-                  const SizedBox(width: 5),
-                  Text(phone, style: const TextStyle(color: AppColors.textMid, fontSize: 12)),
-                ],
-              ),
+              Row(children: [
+                const Icon(Symbols.call, color: AppColors.textLight, size: 12),
+                const SizedBox(width: 4),
+                Text(phone, style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+              ]),
             ],
           ),
         ),
-        const SizedBox(width: 10),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Row(
-              children: [
-                const Icon(Symbols.calendar_today, color: AppColors.textLight, size: 12),
-                const SizedBox(width: 4),
-                Text(lastContacted, style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
-              ],
-            ),
-            const SizedBox(height: 8),
+            if (lastContacted.isNotEmpty)
+              Text(lastContacted, style: const TextStyle(color: AppColors.textLight, fontSize: 10)),
+            const SizedBox(height: 6),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: _priorityBg(priority),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                priority,
-                style: TextStyle(
-                  color: _priorityColor(priority),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(50)),
+              child: Text(priority, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
             ),
           ],
         ),

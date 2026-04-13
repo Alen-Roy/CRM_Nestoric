@@ -22,11 +22,15 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
   final _valueCtrl         = TextEditingController();
   final _notesCtrl         = TextEditingController();
 
-  final _serviceCtrl  = MultiSelectController<String>([]);
-  final _assignCtrl   = SingleSelectController<String?>(null);
+  final _serviceCtrl = MultiSelectController<String>([]);
+  final _assignCtrl  = SingleSelectController<String?>(null);
 
   String? _selectedSource;
-  String  _selectedPriority = '🟡 Medium';
+  String  _selectedPriority = 'Medium';
+
+  // ── Validation error state ─────────────────────────────────────────────────
+  String? _phoneError;
+  String? _nameError;
 
   final List<String> _services = [
     'Social Media Management', 'Google Ads / PPC', 'SEO', 'Instagram Ads',
@@ -35,8 +39,8 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
   ];
   final List<String> _assignees = ['Priya Sharma', 'Amit Kumar', 'Sneha Patel', 'Myself'];
   final List<String> _sources   = [
-    '📞 Inbound Call', '🌐 Website Form', '💬 WhatsApp', '👥 Referral',
-    '📘 Facebook Ad', '🔍 Google Search', '🤝 Walk-in', '📊 Exhibition',
+    'Inbound Call', 'Website Form', 'WhatsApp', 'Referral',
+    'Facebook Ad', 'Google Search', 'Walk-in', 'Exhibition',
   ];
 
   @override
@@ -47,25 +51,67 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
     super.dispose();
   }
 
+  // ── Validation ─────────────────────────────────────────────────────────────
+  bool _validate() {
+    bool valid = true;
+    setState(() {
+      _phoneError = null;
+      _nameError  = null;
+
+      // Phone is required (LeadModel constructor requires it)
+      if (_phoneCtrl.text.trim().isEmpty) {
+        _phoneError = 'Phone number is required';
+        valid = false;
+      } else if (_phoneCtrl.text.trim().length < 7) {
+        _phoneError = 'Enter a valid phone number';
+        valid = false;
+      }
+
+      // At least one of company name or contact person must be provided
+      if (_companyNameCtrl.text.trim().isEmpty &&
+          _contactPersonCtrl.text.trim().isEmpty) {
+        _nameError = 'Enter company name or contact person';
+        valid = false;
+      }
+    });
+    return valid;
+  }
+
   Future<void> _save() async {
+    if (!_validate()) {
+      // Scroll to top so validation errors are visible
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please fix the errors above before saving'),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+
     final lead = LeadModel(
-      name:        _contactPersonCtrl.text.trim().isEmpty ? 'Unnamed Lead' : _contactPersonCtrl.text.trim(),
-      companyName: _companyNameCtrl.text.trim(),
-      contactPerson: _contactPersonCtrl.text.trim(),
-      city:        _cityCtrl.text.trim(),
-      phone:       _phoneCtrl.text.trim(),
-      email:       _emailCtrl.text.trim(),
-      amount:      _valueCtrl.text.trim(),
-      notes:       _notesCtrl.text.trim(),
-      service:     _serviceCtrl.value.join(', '),
-      assignTo:    _assignCtrl.value ?? '',
-      leadSource:  _selectedSource ?? '',
-      priority:    _selectedPriority.replaceAll(RegExp(r'[^\w\s]'), '').trim(),
-      stage:       'New',
-      userId:      user.uid,
+      name:          _contactPersonCtrl.text.trim().isNotEmpty
+                       ? _contactPersonCtrl.text.trim()
+                       : _companyNameCtrl.text.trim(),
+      companyName:   _companyNameCtrl.text.trim().isEmpty ? null : _companyNameCtrl.text.trim(),
+      contactPerson: _contactPersonCtrl.text.trim().isEmpty ? null : _contactPersonCtrl.text.trim(),
+      city:          _cityCtrl.text.trim().isEmpty ? null : _cityCtrl.text.trim(),
+      phone:         _phoneCtrl.text.trim(),
+      email:         _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+      amount:        _valueCtrl.text.trim().isEmpty ? null : _valueCtrl.text.trim(),
+      notes:         _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+      service:       _serviceCtrl.value.isEmpty ? null : _serviceCtrl.value.join(', '),
+      assignTo:      _assignCtrl.value,
+      leadSource:    _selectedSource,
+      priority:      _selectedPriority.replaceAll(RegExp(r'[^\w\s]'), '').trim(),
+      stage:         'New',
+      userId:        user.uid,
     );
+
     await ref.read(leadRepositoryProvider).addLead(lead);
     if (mounted) Navigator.pop(context);
   }
@@ -94,27 +140,29 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
             // ── Header ──────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]),
-                      child: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 16),
-                    ),
+              child: Row(children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 40, height: 40,
+                    decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8)]),
+                    child: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 16),
                   ),
-                  const SizedBox(width: 16),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Add New Lead', style: TextStyle(color: AppColors.textDark, fontSize: 22, fontWeight: FontWeight.w800)),
-                      Text('Fill in the details below', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 16),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Add New Lead',
+                        style: TextStyle(color: AppColors.textDark, fontSize: 22, fontWeight: FontWeight.w800)),
+                    Text('Fill in the details below',
+                        style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                  ],
+                ),
+              ]),
             ),
             const SizedBox(height: 20),
 
@@ -125,14 +173,14 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    // ── Company Details ────────────────────────────────────
+                    // ── Company Details ──────────────────────────────────
                     _sectionCard(
                       icon: Symbols.business,
                       title: 'Company Details',
                       color: AppColors.primary,
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        _field('Company / Business Name', _companyNameCtrl, 'e.g. Ravi\'s Restaurant', Icons.business_outlined),
+                        _field('Company / Business Name', _companyNameCtrl, "e.g. Ravi's Restaurant", Icons.business_outlined),
+                        if (_nameError != null) _errorText(_nameError!),
                         const SizedBox(height: 12),
                         Row(children: [
                           Expanded(child: _field('Contact Person', _contactPersonCtrl, 'Full name', Icons.person_outline)),
@@ -141,19 +189,24 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                         ]),
                         const SizedBox(height: 12),
                         Row(children: [
-                          Expanded(child: _field('Phone', _phoneCtrl, '+91 XXXXX', Icons.phone_outlined, type: TextInputType.phone)),
+                          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            _field('Phone *', _phoneCtrl, '+91 XXXXX', Icons.phone_outlined,
+                                type: TextInputType.phone, hasError: _phoneError != null),
+                            if (_phoneError != null) _errorText(_phoneError!),
+                          ])),
                           const SizedBox(width: 12),
-                          Expanded(child: _field('Email', _emailCtrl, 'email@example.com', Icons.email_outlined, type: TextInputType.emailAddress)),
+                          Expanded(child: _field('Email', _emailCtrl, 'email@example.com',
+                              Icons.email_outlined, type: TextInputType.emailAddress)),
                         ]),
                       ]),
                     ),
                     const SizedBox(height: 16),
 
-                    // ── Service & Value ────────────────────────────────────
+                    // ── Service & Value ──────────────────────────────────
                     _sectionCard(
                       icon: Symbols.home_repair_service,
                       title: 'Service & Value',
-                      color: AppColors.secondary,
+                      color: AppColors.primaryGlow,
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         _label('Service Interested In'),
                         CustomDropdown<String>.multiSelect(
@@ -165,7 +218,8 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                         ),
                         const SizedBox(height: 12),
                         Row(children: [
-                          Expanded(child: _field('Estimated Value', _valueCtrl, '₹ amount', Icons.currency_rupee_outlined, type: TextInputType.number)),
+                          Expanded(child: _field('Estimated Value', _valueCtrl, '₹ amount',
+                              Icons.currency_rupee_outlined, type: TextInputType.number)),
                           const SizedBox(width: 12),
                           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             _label('Assign To'),
@@ -182,11 +236,11 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                     ),
                     const SizedBox(height: 16),
 
-                    // ── Source & Priority ──────────────────────────────────
+                    // ── Source & Priority ────────────────────────────────
                     _sectionCard(
                       icon: Symbols.travel_explore,
                       title: 'Source & Priority',
-                      color: AppColors.accent3,
+                      color: AppColors.primaryMid,
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         _label('Lead Source'),
                         Wrap(
@@ -202,9 +256,15 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                                   color: isSel ? AppColors.primary : AppColors.surface,
                                   borderRadius: BorderRadius.circular(50),
                                   border: Border.all(color: isSel ? AppColors.primary : AppColors.border),
-                                  boxShadow: isSel ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))] : [],
+                                  boxShadow: isSel
+                                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))]
+                                      : [],
                                 ),
-                                child: Text(s, style: TextStyle(color: isSel ? Colors.white : AppColors.textMid, fontSize: 12, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500)),
+                                child: Text(s,
+                                    style: TextStyle(
+                                        color: isSel ? Colors.white : AppColors.textMid,
+                                        fontSize: 12,
+                                        fontWeight: isSel ? FontWeight.w700 : FontWeight.w500)),
                               ),
                             );
                           }).toList(),
@@ -212,11 +272,11 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                         const SizedBox(height: 14),
                         _label('Priority'),
                         Row(children: [
-                          _priorityChip('🔴 High',   AppColors.danger),
+                          _priorityChip('High',   AppColors.danger),
                           const SizedBox(width: 8),
-                          _priorityChip('🟡 Medium', AppColors.warning),
+                          _priorityChip('Medium', AppColors.primarySoft),
                           const SizedBox(width: 8),
-                          _priorityChip('🟢 Low',    AppColors.success),
+                          _priorityChip('Low',    AppColors.primary),
                         ]),
                         const SizedBox(height: 14),
                         _label('Notes / What they said'),
@@ -264,7 +324,8 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                       backgroundColor: Colors.transparent, shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     ),
-                    child: const Text('Save Lead', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                    child: const Text('Save Lead',
+                        style: TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ),
@@ -275,7 +336,15 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
     );
   }
 
-  // ── Section card ───────────────────────────────────────────────────────────
+  Widget _errorText(String msg) => Padding(
+    padding: const EdgeInsets.only(top: 4, left: 4),
+    child: Row(children: [
+      const Icon(Icons.error_outline, color: AppColors.danger, size: 13),
+      const SizedBox(width: 4),
+      Text(msg, style: const TextStyle(color: AppColors.danger, fontSize: 11, fontWeight: FontWeight.w600)),
+    ]),
+  );
+
   Widget _sectionCard({required IconData icon, required String title, required Color color, required Widget child}) {
     return Container(
       width: double.infinity,
@@ -308,22 +377,39 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
     child: Text(text, style: const TextStyle(color: AppColors.textMid, fontSize: 12, fontWeight: FontWeight.w600)),
   );
 
-  Widget _field(String label, TextEditingController ctrl, String hint, IconData icon, {TextInputType? type}) {
+  Widget _field(
+    String label,
+    TextEditingController ctrl,
+    String hint,
+    IconData icon, {
+    TextInputType? type,
+    bool hasError = false,
+  }) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _label(label),
       TextField(
         controller: ctrl,
         keyboardType: type,
+        onChanged: (_) {
+          // Clear errors as user types
+          if (hasError) setState(() { _phoneError = null; _nameError = null; });
+        },
         style: const TextStyle(color: AppColors.textDark, fontSize: 14),
         cursorColor: AppColors.primary,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 13),
-          prefixIcon: Icon(icon, color: AppColors.textLight, size: 18),
+          prefixIcon: Icon(icon, color: hasError ? AppColors.danger : AppColors.textLight, size: 18),
           filled: true, fillColor: AppColors.background,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.border)),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: hasError ? AppColors.danger : AppColors.border)),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: hasError ? AppColors.danger : AppColors.border)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(color: hasError ? AppColors.danger : AppColors.primary, width: 1.5)),
           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         ),
       ),
@@ -343,7 +429,11 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isSel ? color : AppColors.border, width: isSel ? 1.5 : 1),
           ),
-          child: Center(child: Text(label, style: TextStyle(color: isSel ? color : AppColors.textMid, fontSize: 12, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500))),
+          child: Center(child: Text(label,
+              style: TextStyle(
+                  color: isSel ? color : AppColors.textMid,
+                  fontSize: 12,
+                  fontWeight: isSel ? FontWeight.w700 : FontWeight.w500))),
         ),
       ),
     );

@@ -1,129 +1,104 @@
 import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/models/task_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TaskCard extends StatefulWidget {
   final TaskModel task;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
   final DateTime scheduledAt;
-
-  const TaskCard({
-    super.key,
-    required this.task,
-    required this.onToggle,
-    required this.onDelete,
-    required this.scheduledAt,
-  });
-
+  const TaskCard({super.key, required this.task, required this.onToggle, required this.onDelete, required this.scheduledAt});
   @override
   State<TaskCard> createState() => _TaskCardState();
 }
 
 class _TaskCardState extends State<TaskCard> {
-  double _dragOffset = 0;
-  static const double _maxReveal = 80;
+  double _drag = 0;
+  static const double _max = 88;
+  static final DateFormat _fmt = DateFormat('h:mm a');
+
+  Color get _priorityColor {
+    switch (widget.task.priority) {
+      case 'High':  return AppColors.danger;
+      case 'Low':   return AppColors.primaryGlow;
+      default:      return AppColors.primaryMid;
+    }
+  }
+
+  // Card bg — cycle through light purple shades
+  Color _cardBg(int? index) => widget.task.isDone ? AppColors.background : AppColors.primaryLight;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onToggle,
-      onHorizontalDragUpdate: (details) {
-        setState(() {
-          _dragOffset = (_dragOffset + details.delta.dx).clamp(-_maxReveal, 0);
-        });
-      },
-      onHorizontalDragEnd: (details) {
-        setState(() {
-          _dragOffset = _dragOffset < -_maxReveal / 2 ? -_maxReveal : 0;
-        });
-      },
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                width: _dragOffset.abs(),
+      onHorizontalDragUpdate: (d) => setState(() => _drag = (_drag + d.delta.dx).clamp(-_max, 0)),
+      onHorizontalDragEnd: (d) => setState(() => _drag = _drag < -_max / 2 ? -_max : 0),
+      child: Stack(children: [
+        Positioned.fill(child: Align(
+          alignment: Alignment.centerRight,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: _drag.abs(),
+            decoration: BoxDecoration(color: AppColors.danger, borderRadius: BorderRadius.circular(22)),
+            child: _drag.abs() > 44
+                ? IconButton(icon: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
+                    onPressed: () { setState(() => _drag = 0); widget.onDelete(); })
+                : null,
+          ),
+        )),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          transform: Matrix4.translationValues(_drag, 0, 0),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: _cardBg(null),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.danger,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: _dragOffset.abs() > 40
-                    ? IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.white),
-                        onPressed: () {
-                          setState(() => _dragOffset = 0);
-                          widget.onDelete();
-                        },
-                      )
-                    : null,
+                  color: _priorityColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                child: Text(widget.task.priority, style: TextStyle(color: _priorityColor, fontSize: 10, fontWeight: FontWeight.w700)),
               ),
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            transform: Matrix4.translationValues(_dragOffset, 0, 0),
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+              const SizedBox(height: 8),
+              Text(widget.task.title, style: TextStyle(
+                color: widget.task.isDone ? AppColors.textLight : AppColors.textDark,
+                fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: -0.3,
+                decoration: widget.task.isDone ? TextDecoration.lineThrough : null,
+                decorationColor: AppColors.textLight,
+              ), maxLines: 2, overflow: TextOverflow.ellipsis),
+            ])),
+            const SizedBox(width: 14),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Text('Start', style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+              const SizedBox(height: 3),
+              Text(_fmt.format(widget.scheduledAt),
+                  style: const TextStyle(color: AppColors.textMid, fontSize: 13, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 14),
+              GestureDetector(
+                onTap: widget.onToggle,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 34, height: 34,
+                  decoration: BoxDecoration(
+                    color: widget.task.isDone ? AppColors.primary.withOpacity(0.12) : AppColors.border,
+                    shape: BoxShape.circle),
+                  child: Icon(
+                    widget.task.isDone ? Icons.check_rounded : Icons.radio_button_unchecked_rounded,
+                    color: widget.task.isDone ? AppColors.primary : AppColors.textLight,
+                    size: 18),
                 ),
-              ],
-            ),
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Icon(
-                  widget.task.isDone
-                      ? Icons.check_circle_rounded
-                      : Icons.radio_button_unchecked_rounded,
-                  color: widget.task.isDone
-                      ? AppColors.success
-                      : AppColors.textLight,
-                  size: 22,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: AnimatedDefaultTextStyle(
-                    duration: const Duration(milliseconds: 250),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: widget.task.isDone
-                          ? AppColors.textLight
-                          : AppColors.textDark,
-                      decoration: widget.task.isDone
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                      decorationColor: AppColors.textLight,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(child: Text(widget.task.title)),
-                        Text(
-                          '${widget.scheduledAt.hour.toString().padLeft(2, '0')}:${widget.scheduledAt.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(
-                            color: AppColors.textLight,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+              ),
+            ]),
+          ]),
+        ),
+      ]),
     );
   }
 }

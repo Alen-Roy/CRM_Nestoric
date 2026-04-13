@@ -123,19 +123,20 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: AppColors.cardDark,
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border),
                       ),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Task Name', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text('Task Name', style: const TextStyle(color: AppColors.textMid, fontSize: 12, fontWeight: FontWeight.w600)),
                         TextField(
                           controller: _titleCtrl,
-                          style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, height: 1.3),
-                          cursorColor: Colors.white,
+                          style: const TextStyle(color: AppColors.primary, fontSize: 26, fontWeight: FontWeight.w800, height: 1.3, letterSpacing: -0.5),
+                          cursorColor: AppColors.primary,
                           maxLines: 2,
                           decoration: InputDecoration(
                             hintText: 'Add task name...',
-                            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 28, fontWeight: FontWeight.w800),
+                            hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 26, fontWeight: FontWeight.w800),
                             border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none,
                             contentPadding: const EdgeInsets.only(top: 8),
                           ),
@@ -158,7 +159,7 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                         icon: Icons.access_time_rounded,
                         label: 'Time',
                         value: timeStr,
-                        color: AppColors.secondary,
+                        color: AppColors.primaryGlow,
                         onTap: _pickTime,
                       )),
                     ]),
@@ -170,9 +171,9 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                       child: Row(children: [
                         _priorityChip('High',   AppColors.danger),
                         const SizedBox(width: 10),
-                        _priorityChip('Medium', AppColors.warning),
+                        _priorityChip('Medium', AppColors.primarySoft),
                         const SizedBox(width: 10),
-                        _priorityChip('Low',    AppColors.success),
+                        _priorityChip('Low',    AppColors.primary),
                       ]),
                     ),
                     const SizedBox(height: 16),
@@ -216,7 +217,7 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                   child: ElevatedButton(
                     onPressed: _save,
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
-                    child: const Text('Save Task', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                    child: const Text('Save Task', style: TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
                   ),
                 ),
               ),

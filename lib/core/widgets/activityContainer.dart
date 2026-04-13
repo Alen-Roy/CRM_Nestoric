@@ -1,95 +1,51 @@
 import 'package:crm/core/constants/app_colors.dart';
+import 'package:crm/features/client/pages/home_page.dart';
 import 'package:flutter/material.dart';
-
-class GridItem {
-  final IconData icon;
-  final Color accent;
-  final String total;
-  final String desc;
-  final String info;
-  const GridItem({required this.icon, required this.accent, required this.total, required this.desc, required this.info});
-}
 
 class ActivityContainers extends StatelessWidget {
   const ActivityContainers({super.key, required this.gridItems});
-
   final List<GridItem> gridItems;
+
+  static const _bgs = [
+    AppColors.primaryLight, AppColors.surface,
+    AppColors.primaryPale,  AppColors.surface,
+  ];
+  static const _fgs = [
+    AppColors.primary, AppColors.textDark,
+    AppColors.primary, AppColors.textDark,
+  ];
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
-      primary: false,
-      shrinkWrap: true,
+      primary: false, shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: gridItems.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
-        childAspectRatio: 1.15,
-      ),
-      itemBuilder: (context, index) {
-        final item = gridItems[index];
+        crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.3),
+      itemBuilder: (_, i) {
+        final item = gridItems[i];
+        final bg   = _bgs[i % _bgs.length];
+        final fg   = _fgs[i % _fgs.length];
         return Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: item.accent.withValues(alpha: 0.10),
-                blurRadius: 18,
-                offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: bg,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                height: 44,
-                width: 44,
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                  color: item.accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(item.icon, size: 20, color: item.accent),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                item.total,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                item.desc,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textMid,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                item.info,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: item.accent.withValues(alpha: 0.85),
-                ),
-              ),
-            ],
-          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(color: item.accent.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+              child: Icon(item.icon, size: 20, color: item.accent),
+            ),
+            const Spacer(),
+            Text(item.total, style: TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5, color: fg)),
+            const SizedBox(height: 2),
+            Text(item.desc, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg.withOpacity(0.6))),
+          ]),
         );
       },
     );

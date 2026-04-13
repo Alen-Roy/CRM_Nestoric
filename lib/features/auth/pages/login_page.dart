@@ -61,18 +61,18 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       width: 80, height: 80,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                        border: Border.all(color: AppColors.primarySoft, width: 1.5),
                       ),
                       child: Image.asset('assets/logo/logo.png'),
                     ),
                     const SizedBox(height: 20),
                     const Text('Nexify CRM',
-                        style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        style: TextStyle(color: AppColors.textDark, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                     const SizedBox(height: 6),
                     Text('Your smart sales companion',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 14)),
+                        style: TextStyle(color: AppColors.textMid, fontSize: 14)),
                   ],
                 ),
               ),
@@ -87,7 +87,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Welcome back 👋',
+                  const Text('Welcome back',
                       style: TextStyle(color: AppColors.textDark, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                   const SizedBox(height: 4),
                   const Text('Sign in to continue',
@@ -159,7 +159,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
                       ),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         SizedBox(width: 22, height: 22, child: Image.asset('assets/logo/google.png', errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 22))),
@@ -232,7 +232,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
         ),
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,
@@ -241,8 +241,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
           ),
           child: isLoading
-              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: AppColors.textDark, strokeWidth: 2))
+              : Text(label, style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
         ),
       ),
     );

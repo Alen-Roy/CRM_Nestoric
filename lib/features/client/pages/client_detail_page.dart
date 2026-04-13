@@ -15,10 +15,10 @@ class ClientDetailPage extends ConsumerWidget {
 
   Color _statusColor(String s) {
     switch (s) {
-      case ClientStatus.vip:       return AppColors.accent3;
-      case ClientStatus.active:    return AppColors.success;
+      case ClientStatus.vip:       return AppColors.primaryMid;
+      case ClientStatus.active:    return AppColors.primary;
       case ClientStatus.inactive:  return AppColors.textLight;
-      default:                     return AppColors.secondary;
+      default:                     return AppColors.primaryGlow;
     }
   }
 
@@ -39,8 +39,8 @@ class ClientDetailPage extends ConsumerWidget {
             leading: IconButton(
               icon: Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 16),
+                decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 16),
               ),
               onPressed: () => Navigator.pop(context),
             ),
@@ -49,8 +49,8 @@ class ClientDetailPage extends ConsumerWidget {
                 padding: const EdgeInsets.only(right: 16),
                 child: Container(
                   width: 36, height: 36,
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.more_vert, color: Colors.white, size: 18),
+                  decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.more_vert, color: AppColors.textDark, size: 18),
                 ),
               ),
             ],
@@ -67,20 +67,20 @@ class ClientDetailPage extends ConsumerWidget {
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withOpacity(0.4), width: 2),
+                          border: Border.all(color: AppColors.primaryMid, width: 2),
                         ),
                         child: CircleAvatar(
                           radius: 44,
-                          backgroundColor: Colors.white.withOpacity(0.2),
+                          backgroundColor: AppColors.primaryLight,
                           child: Text(client.name[0].toUpperCase(),
-                              style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w800)),
+                              style: const TextStyle(color: AppColors.textDark, fontSize: 36, fontWeight: FontWeight.w800)),
                         ),
                       ),
                       const SizedBox(height: 14),
-                      Text(client.name, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800)),
+                      Text(client.name, style: const TextStyle(color: AppColors.textDark, fontSize: 22, fontWeight: FontWeight.w800)),
                       if (client.companyName != null) ...[
                         const SizedBox(height: 4),
-                        Text(client.companyName!, style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 13)),
+                        Text(client.companyName!, style: TextStyle(color: AppColors.textMid, fontSize: 13)),
                       ],
                       const SizedBox(height: 10),
                       Container(
@@ -90,7 +90,7 @@ class ClientDetailPage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: statusColor.withOpacity(0.5), width: 1),
                         ),
-                        child: Text(client.status, style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+                        child: Text(client.status, style: TextStyle(color: AppColors.textDark, fontSize: 12, fontWeight: FontWeight.w700)),
                       ),
                       const SizedBox(height: 20),
                       // Action buttons
@@ -133,20 +133,20 @@ class ClientDetailPage extends ConsumerWidget {
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
-                        gradient: AppColors.darkGradient,
+                        gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(22),
                       ),
                       child: Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Monthly Value', style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12)),
+                          Text('Monthly Value', style: TextStyle(color: AppColors.textMid, fontSize: 12)),
                           const SizedBox(height: 4),
                           Text('₹${client.monthlyValue!.toStringAsFixed(0)}',
-                              style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                              style: const TextStyle(color: AppColors.textDark, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                         ])),
                         Container(
                           padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
-                          child: const Icon(Symbols.currency_rupee, color: Colors.white, size: 26),
+                          decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(14)),
+                          child: const Icon(Symbols.currency_rupee, color: AppColors.textDark, size: 26),
                         ),
                       ]),
                     ),
@@ -168,9 +168,9 @@ class ClientDetailPage extends ConsumerWidget {
                   // Dates section
                   _sectionTitle('Timeline'),
                   const SizedBox(height: 12),
-                  _dateRow(Symbols.calendar_today, 'Joined', DateFormat('d MMM yyyy').format(client.joinedDate), AppColors.success),
+                  _dateRow(Symbols.calendar_today, 'Joined', DateFormat('d MMM yyyy').format(client.joinedDate), AppColors.primary),
                   if (client.contractRenewal != null)
-                    _dateRow(Symbols.event_repeat, 'Contract Renewal', DateFormat('d MMM yyyy').format(client.contractRenewal!), AppColors.warning),
+                    _dateRow(Symbols.event_repeat, 'Contract Renewal', DateFormat('d MMM yyyy').format(client.contractRenewal!), AppColors.primarySoft),
 
                   // Notes
                   if (client.notes != null && client.notes!.isNotEmpty) ...[
@@ -211,7 +211,7 @@ class ClientDetailPage extends ConsumerWidget {
         onPressed: () => _showLogActivitySheet(context, ref),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Log Activity', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+        label: const Text('Log Activity', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700)),
       ),
     );
   }
@@ -222,11 +222,11 @@ class ClientDetailPage extends ConsumerWidget {
       child: Column(children: [
         Container(
           width: 50, height: 50,
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(16)),
-          child: Icon(icon, color: Colors.white, size: 22),
+          decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(16)),
+          child: Icon(icon, color: AppColors.textDark, size: 22),
         ),
         const SizedBox(height: 5),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 11, fontWeight: FontWeight.w500)),
+        Text(label, style: TextStyle(color: AppColors.textMid, fontSize: 11, fontWeight: FontWeight.w500)),
       ]),
     );
   }
@@ -352,7 +352,7 @@ class _LogSheetState extends State<_LogSheet> {
                     border: Border.all(color: isSel ? AppColors.primary : AppColors.border),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Text(t.emoji, style: const TextStyle(fontSize: 14)),
+                    Icon(t.icon, color: isSel ? AppColors.primary : AppColors.textMid, size: 16),
                     const SizedBox(width: 6),
                     Text(t.label, style: TextStyle(color: isSel ? AppColors.primary : AppColors.textMid, fontSize: 13, fontWeight: isSel ? FontWeight.w700 : FontWeight.normal)),
                   ]),
@@ -378,7 +378,7 @@ class _LogSheetState extends State<_LogSheet> {
                   if (context.mounted) Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                child: const Text('Save Activity', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                child: const Text('Save Activity', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 15)),
               ),
             ),
           ),

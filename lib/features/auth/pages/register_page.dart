@@ -62,18 +62,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       width: 70, height: 70,
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: AppColors.primaryLight,
                         borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                        border: Border.all(color: AppColors.primarySoft, width: 1.5),
                       ),
                       child: Image.asset('assets/logo/logo.png'),
                     ),
                     const SizedBox(height: 14),
                     const Text('Create Account',
-                        style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        style: TextStyle(color: AppColors.textDark, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                     const SizedBox(height: 4),
                     Text('Join Nexify CRM today',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 13)),
+                        style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 13)),
                   ],
                 ),
               ),
@@ -168,14 +168,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(18),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
         ),
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
           child: isLoading
-              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : Text(label, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(color: AppColors.textDark, strokeWidth: 2))
+              : Text(label, style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
         ),
       ),
     );

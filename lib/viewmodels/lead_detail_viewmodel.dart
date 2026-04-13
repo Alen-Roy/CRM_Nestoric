@@ -95,7 +95,7 @@ String moveButtonLabel(String currentStage) {
   switch (currentStage) {
     case 'New':         return '→ Move to Proposal';
     case 'Proposal':    return '→ Move to Negotiation';
-    case 'Negotiation': return '🏆 Mark as Won!';
+    case 'Negotiation': return 'Mark as Won';
     default:            return '';
   }
 }

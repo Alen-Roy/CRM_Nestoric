@@ -7,54 +7,57 @@ class DateItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  static final DateFormat _dayFormat = DateFormat('EEE');
+  static final DateFormat _dayNameFmt = DateFormat('EEE');
+  static final DateFormat _dayFmt     = DateFormat('d');
 
   const DateItem({super.key, required this.date, required this.isSelected, required this.onTap});
+
+  bool get _isToday {
+    final now = DateTime.now();
+    return date.year == now.year && date.month == now.month && date.day == now.day;
+  }
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedScale(
-        scale: isSelected ? 1.06 : 1.0,
+      child: AnimatedContainer(
         duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutBack,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeInOut,
-          height: 80,
-          width: 50,
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary : AppColors.surface,
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: isSelected
-                ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.28), blurRadius: 12, offset: const Offset(0, 4))]
-                : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6, offset: const Offset(0, 2))],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                style: TextStyle(
-                  color: isSelected ? Colors.white : AppColors.textDark,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                  fontSize: isSelected ? 17 : 15,
-                ),
-                child: Text(date.day.toString()),
-              ),
-              const SizedBox(height: 2),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 220),
-                style: TextStyle(
-                  color: isSelected ? Colors.white70 : AppColors.textLight,
-                  fontSize: 11,
-                ),
-                child: Text(_dayFormat.format(date)),
-              ),
-            ],
-          ),
+        curve: Curves.easeInOutCubic,
+        width: 52,
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: isSelected ? null : Border.all(color: AppColors.border),
+          boxShadow: isSelected
+              ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))]
+              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
         ),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(
+            _dayNameFmt.format(date).toUpperCase(),
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textLight,
+              fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5),
+          ),
+          const SizedBox(height: 6),
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            style: TextStyle(
+              color: isSelected ? Colors.white : AppColors.textDark,
+              fontSize: isSelected ? 22 : 18, fontWeight: FontWeight.w800, height: 1),
+            child: Text(_dayFmt.format(date)),
+          ),
+          const SizedBox(height: 5),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            width: _isToday ? 5 : 0, height: _isToday ? 5 : 0,
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.white : AppColors.primary,
+              shape: BoxShape.circle),
+          ),
+          const SizedBox(height: 4),
+        ]),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:crm/viewmodels/task_viewmodel.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 // ── Result types ──────────────────────────────────────────────────────────────
 enum SearchResultType { lead, client, task }
