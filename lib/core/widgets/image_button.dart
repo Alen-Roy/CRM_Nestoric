@@ -15,7 +15,7 @@ class ImageButton extends StatelessWidget {
         width: 60, height: 60,
         decoration: BoxDecoration(
           color: AppColors.primaryLight,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.primarySoft, width: 1),
         ),
         child: ClipRRect(

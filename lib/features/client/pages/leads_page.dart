@@ -65,10 +65,10 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
           backgroundColor: AppColors.primary,
           elevation: 4,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          icon: const Icon(Icons.add, color: AppColors.textDark, size: 20),
+          icon: const Icon(Icons.add, color: Colors.white, size: 20),
           label: const Text(
             'Add Lead',
-            style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 14),
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
           ),
         ),
       ),
@@ -102,11 +102,15 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
                         }
                       }),
                       child: Container(
-                        width: 40, height: 40,
+                        width: 42, height: 42,
                         decoration: BoxDecoration(
                           color: _showSearch ? AppColors.primary : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _showSearch ? AppColors.primarySoft : AppColors.border),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.primary.withOpacity(_showSearch ? 0.25 : 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+                          ],
                         ),
                         child: Icon(
                           Icons.search_rounded,
@@ -135,8 +139,14 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
                           prefixIcon: const Icon(Icons.search, color: AppColors.textLight, size: 20),
                           filled: true, fillColor: AppColors.surface,
                           border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(16),
-                              borderSide: BorderSide.none),
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: AppColors.border)),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: AppColors.border)),
+                          focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
                           contentPadding: const EdgeInsets.symmetric(vertical: 0),
                         ),
                       ),
@@ -165,9 +175,10 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
                             decoration: BoxDecoration(
                               color: isSel ? AppColors.primary : AppColors.surface,
                               borderRadius: BorderRadius.circular(50),
+                              border: isSel ? null : Border.all(color: AppColors.border),
                               boxShadow: isSel
                                   ? [BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 10, offset: const Offset(0, 4))]
-                                  : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                                  : [],
                             ),
                             child: Text(_stages[i],
                                 style: TextStyle(
@@ -196,7 +207,7 @@ class _LeadsPageState extends ConsumerState<LeadsPage> {
                           width: 70, height: 70,
                           decoration: BoxDecoration(
                               color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(22)),
+                              borderRadius: BorderRadius.circular(20)),
                           child: const Icon(Symbols.leaderboard, color: AppColors.primary, size: 34),
                         ),
                         const SizedBox(height: 14),
@@ -248,10 +259,12 @@ class _LeadCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 14, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          ],
         ),
         child: Row(children: [
           // Avatar

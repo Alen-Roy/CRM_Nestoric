@@ -68,7 +68,7 @@ class ActivityTimeline extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: bg, borderRadius: BorderRadius.circular(18),
+                  color: bg, borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
                   boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 3))],
                 ),
@@ -87,7 +87,7 @@ class ActivityTimeline extends StatelessWidget {
                       GestureDetector(
                         onTap: () => onDelete!(activity),
                         child: Container(width: 22, height: 22,
-                          decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(7)),
+                          decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(8)),
                           child: const Icon(Icons.close, color: AppColors.textLight, size: 13)),
                       ),
                     ],

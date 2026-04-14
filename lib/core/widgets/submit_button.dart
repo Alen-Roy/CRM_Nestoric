@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:crm/core/constants/app_colors.dart';
+import 'package:flutter/material.dart';
 
 class submitButton extends StatelessWidget {
   const submitButton({super.key, required this.text, required this.onPressed});
@@ -13,11 +13,11 @@ class submitButton extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.transparent,
         shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       child: Text(
         text,
-        style: TextStyle(
+        style: const TextStyle(
           color: AppColors.textDark,
           fontSize: 16,
           fontWeight: FontWeight.w700,

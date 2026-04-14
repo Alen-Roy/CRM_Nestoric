@@ -27,7 +27,7 @@ class DateItem extends StatelessWidget {
         width: 52,
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           border: isSelected ? null : Border.all(color: AppColors.border),
           boxShadow: isSelected
               ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))]

@@ -4,10 +4,13 @@ import 'package:crm/core/widgets/follow_up_section.dart';
 import 'package:crm/features/client/pages/new_lead_page.dart';
 import 'package:crm/features/client/pages/task_add_page.dart';
 import 'package:crm/models/client_model.dart';
+import 'package:crm/models/task_model.dart';
 import 'package:crm/viewmodels/auth_viewmodel.dart';
 import 'package:crm/viewmodels/client_viewmodel.dart';
 import 'package:crm/viewmodels/home_viewmodel.dart';
+import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:crm/viewmodels/shell_viewmodel.dart';
+import 'package:crm/viewmodels/task_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -19,7 +22,7 @@ import 'package:crm/features/client/components/recent_activities_section.dart'
 import 'package:crm/features/client/pages/global_search_page.dart';
 import 'package:intl/intl.dart';
 
-// ── Data classes used by legacy widget files ──────────────────────────────────
+// ── Data classes ──────────────────────────────────────────────────────────────
 class GridItem {
   final IconData icon;
   final Color accent;
@@ -42,6 +45,7 @@ class QuickActions {
   QuickActions({required this.icon, required this.label, required this.onTap});
 }
 
+// ── Recent activities stream ──────────────────────────────────────────────────
 final recentActivitiesProvider = StreamProvider<List<RecentActivity>>((ref) {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return Stream.value([]);
@@ -117,6 +121,7 @@ void _showCallClientSheet(BuildContext context, WidgetRef ref) {
   );
 }
 
+// ── HomePage ──────────────────────────────────────────────────────────────────
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
   @override
@@ -134,13 +139,15 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final statsAsync = ref.watch(homeStatsProvider);
     final recentAsync = ref.watch(recentActivitiesProvider);
+    final tasksAsync = ref.watch(tasksStreamProvider);
+    final leadsAsync = ref.watch(leadsProvider);
     final user = FirebaseAuth.instance.currentUser;
     final userName =
         user?.displayName ?? user?.email?.split('@').first ?? 'User';
     final firstName = userName.split(' ').first;
 
     return Scaffold(
-      backgroundColor: const Color.fromARGB(139, 255, 255, 255),
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -148,6 +155,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 24),
+
               // ── Header ──────────────────────────────────────────────────
               Row(
                 children: [
@@ -171,7 +179,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Hi $firstName',
+                        'Hi $firstName ',
                         style: const TextStyle(
                           color: AppColors.textMid,
                           fontSize: 14,
@@ -204,8 +212,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ],
               ),
+
               const SizedBox(height: 20),
-              // ── Big title ────────────────────────────────────────────────
+
+              // ── Big title ─────────────────────────────────────────────────
               const Text(
                 'Your\nDashboard',
                 style: TextStyle(
@@ -217,7 +227,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
               const SizedBox(height: 20),
-              // ── Stat pills ───────────────────────────────────────────────
+
+              // ── Stat pills ────────────────────────────────────────────────
               statsAsync.when(
                 data: (s) => _StatPillsRow(
                   tasks: s.tasksToday,
@@ -229,7 +240,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
-              // ── Revenue card ─────────────────────────────────────────────
+
+              // ── Revenue card ──────────────────────────────────────────────
               statsAsync.when(
                 data: (s) => _RevenueCard(
                   revenue: s.totalRevenue,
@@ -241,7 +253,18 @@ class _HomePageState extends ConsumerState<HomePage> {
                 error: (_, __) => const SizedBox.shrink(),
               ),
               const SizedBox(height: 24),
-              // ── Quick actions ────────────────────────────────────────────
+
+              // ── Pipeline stage strip (NEW) ─────────────────────────────────
+              leadsAsync.when(
+                data: (leads) => leads.isEmpty
+                    ? const SizedBox.shrink()
+                    : _PipelineStrip(leads: leads.map((l) => l.stage).toList()),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Quick actions ─────────────────────────────────────────────
               const _SectionHeader(title: 'Quick Actions'),
               const SizedBox(height: 14),
               _QuickActionsGrid(
@@ -283,12 +306,43 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ],
               ),
               const SizedBox(height: 24),
-              // ── Follow-up ────────────────────────────────────────────────
+
+              // ── Today's Tasks preview (NEW) ───────────────────────────────
+              tasksAsync.when(
+                data: (tasks) {
+                  final today = DateTime.now();
+                  final todayTasks =
+                      tasks
+                          .where(
+                            (t) =>
+                                t.scheduledAt.year == today.year &&
+                                t.scheduledAt.month == today.month &&
+                                t.scheduledAt.day == today.day &&
+                                !t.isDone,
+                          )
+                          .toList()
+                        ..sort(
+                          (a, b) => a.scheduledAt.compareTo(b.scheduledAt),
+                        );
+                  if (todayTasks.isEmpty) return const SizedBox.shrink();
+                  return _TodaysTasksCard(
+                    tasks: todayTasks,
+                    onSeeAll: () =>
+                        ref.read(currentTabProvider.notifier).state = 3,
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Follow-up section ─────────────────────────────────────────
               FollowUpSection(
                 onSeeAll: () => ref.read(currentTabProvider.notifier).state = 1,
               ),
               const SizedBox(height: 24),
-              // ── Recent activities ────────────────────────────────────────
+
+              // ── Recent activities ─────────────────────────────────────────
               recentAsync.when(
                 data: (a) => a.isEmpty
                     ? const SizedBox.shrink()
@@ -308,25 +362,32 @@ class _HomePageState extends ConsumerState<HomePage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40,
-        height: 40,
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
+              color: AppColors.primary.withOpacity(0.07),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        child: Icon(icon, color: AppColors.textDark, size: 20),
+        child: Icon(icon, color: AppColors.textDark, size: 19),
       ),
     );
   }
 }
 
+// ── Stat pills row ────────────────────────────────────────────────────────────
 class _StatPillsRow extends StatelessWidget {
   final int tasks, newLeads, dealsWon;
   const _StatPillsRow({
@@ -342,8 +403,8 @@ class _StatPillsRow extends StatelessWidget {
         children: [
           _pill(
             '${tasks.toString().padLeft(2, '0')} Tasks',
-            AppColors.primaryLight,
             AppColors.primary,
+            Colors.white,
           ),
           const SizedBox(width: 10),
           _pill(
@@ -354,8 +415,8 @@ class _StatPillsRow extends StatelessWidget {
           const SizedBox(width: 10),
           _pill(
             '${dealsWon.toString().padLeft(2, '0')} Won',
-            AppColors.primaryLight,
             AppColors.primary,
+            Colors.white,
           ),
         ],
       ),
@@ -377,6 +438,7 @@ class _StatPillsRow extends StatelessWidget {
   }
 }
 
+// ── Revenue card ──────────────────────────────────────────────────────────────
 class _RevenueCard extends StatelessWidget {
   final double revenue;
   final int dealsWon, totalLeads;
@@ -393,97 +455,108 @@ class _RevenueCard extends StatelessWidget {
     final winRate = totalLeads == 0 ? 0 : (dealsWon / totalLeads * 100).round();
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Revenue Summary',
-                style: TextStyle(
-                  color: AppColors.textMid,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'This Year',
+      child: Padding(
+        padding: const EdgeInsets.all(22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Revenue Summary',
                   style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+                    color: AppColors.textMid,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.primaryLight, AppColors.primaryPale],
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: AppColors.primarySoft),
+                  ),
+                  child: const Text(
+                    'This Year',
+                    style: TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              revenueStr,
+              style: const TextStyle(
+                color: AppColors.textDark,
+                fontSize: 44,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
               ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            revenueStr,
-            style: const TextStyle(
-              color: AppColors.textDark,
-              fontSize: 44,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -1,
             ),
-          ),
-          const Text(
-            'Total from won deals',
-            style: TextStyle(color: AppColors.textLight, fontSize: 12),
-          ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              _miniStat('$dealsWon', 'Won', AppColors.primary),
-              const SizedBox(width: 10),
-              _miniStat('$totalLeads', 'Leads', AppColors.primary),
-              const SizedBox(width: 10),
-              _miniStat('$winRate%', 'Win Rate', AppColors.primaryMid),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: totalLeads == 0
-                  ? 0
-                  : (dealsWon / totalLeads).clamp(0.0, 1.0),
-              backgroundColor: AppColors.border,
-              color: AppColors.primary,
-              minHeight: 7,
+            const Text(
+              'Total from won deals',
+              style: TextStyle(color: AppColors.textLight, fontSize: 12),
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _dot(AppColors.primary, 'Deals Won'),
-              const SizedBox(width: 16),
-              _dot(AppColors.border, 'In Pipeline'),
-            ],
-          ),
-        ],
+            const SizedBox(height: 18),
+            Row(
+              children: [
+                _miniStat('$dealsWon', 'Won', AppColors.primary),
+                const SizedBox(width: 10),
+                _miniStat('$totalLeads', 'Leads', AppColors.primary),
+                const SizedBox(width: 10),
+                _miniStat('$winRate%', 'Win Rate', AppColors.primaryMid),
+              ],
+            ),
+            const SizedBox(height: 16),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(6),
+              child: LinearProgressIndicator(
+                value: totalLeads == 0
+                    ? 0
+                    : (dealsWon / totalLeads).clamp(0.0, 1.0),
+                backgroundColor: AppColors.border,
+                color: AppColors.primary,
+                minHeight: 7,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _dot(AppColors.primary, 'Deals Won'),
+                const SizedBox(width: 16),
+                _dot(AppColors.border, 'In Pipeline'),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -532,6 +605,305 @@ class _RevenueCard extends StatelessWidget {
   );
 }
 
+// ── NEW: Pipeline Stage Strip ──────────────────────────────────────────────────
+// Shows a horizontal breakdown of how many leads are in each stage
+class _PipelineStrip extends StatelessWidget {
+  final List<String> leads; // list of stage strings
+  const _PipelineStrip({required this.leads});
+
+  static const _stageOrder = ['New', 'Proposal', 'Negotiation', 'Won', 'Lost'];
+  static const _stageColors = {
+    'New': AppColors.primaryGlow,
+    'Proposal': AppColors.primaryMid,
+    'Negotiation': AppColors.primary,
+    'Won': AppColors.success,
+    'Lost': AppColors.danger,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final counts = <String, int>{};
+    for (final stage in leads) {
+      counts[stage] = (counts[stage] ?? 0) + 1;
+    }
+    final total = leads.length;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Pipeline Overview',
+                style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '$total total',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Segmented bar
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: _stageOrder.map((stage) {
+                final count = counts[stage] ?? 0;
+                final frac = total == 0 ? 0.0 : count / total;
+                if (count == 0) return const SizedBox.shrink();
+                return Expanded(
+                  flex: (frac * 100).round().clamp(1, 100),
+                  child: Container(height: 10, color: _stageColors[stage]),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 14),
+          // Legend
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: _stageOrder.where((s) => (counts[s] ?? 0) > 0).map((
+              stage,
+            ) {
+              final count = counts[stage] ?? 0;
+              final color = _stageColors[stage] ?? AppColors.primaryMid;
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    '$stage ($count)',
+                    style: const TextStyle(
+                      color: AppColors.textMid,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── NEW: Today's Tasks Preview Card ───────────────────────────────────────────
+class _TodaysTasksCard extends StatelessWidget {
+  final List<TaskModel> tasks;
+  final VoidCallback onSeeAll;
+  const _TodaysTasksCard({required this.tasks, required this.onSeeAll});
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = tasks.take(3).toList();
+    final extra = tasks.length - shown.length;
+    final fmt = DateFormat('h:mm a');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const _SectionHeader(title: "Today's Tasks"),
+            const Spacer(),
+            if (tasks.length > 3)
+              GestureDetector(
+                onTap: onSeeAll,
+                child: const Text(
+                  'See all',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 5),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              ...shown.asMap().entries.map((e) {
+                final task = e.value;
+                final isLast = e.key == shown.length - 1 && extra == 0;
+                final priColor = task.priority == 'High'
+                    ? AppColors.danger
+                    : task.priority == 'Low'
+                    ? AppColors.primary
+                    : AppColors.warning;
+
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      child: Row(
+                        children: [
+                          // Priority dot
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: priColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  task.title,
+                                  style: const TextStyle(
+                                    color: AppColors.textDark,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  fmt.format(task.scheduledAt),
+                                  style: const TextStyle(
+                                    color: AppColors.textLight,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: priColor.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              task.priority,
+                              style: TextStyle(
+                                color: priColor,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (!isLast)
+                      const Divider(
+                        color: AppColors.divider,
+                        height: 1,
+                        indent: 38,
+                      ),
+                  ],
+                );
+              }),
+              // "+ N more" row
+              if (extra > 0)
+                GestureDetector(
+                  onTap: onSeeAll,
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: const BoxDecoration(
+                      border: Border(top: BorderSide(color: AppColors.divider)),
+                    ),
+                    child: Center(
+                      child: Text(
+                        '+ $extra more task${extra > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Quick actions ─────────────────────────────────────────────────────────────
 class _QAction {
   final IconData icon;
   final String label;
@@ -551,138 +923,161 @@ class _QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: actions
-          .map(
-            (a) => GestureDetector(
+      children: actions.asMap().entries.map((entry) {
+        final i = entry.key;
+        final a = entry.value;
+        final isLast = i == actions.length - 1;
+        return Expanded(
+          child: Padding(
+            padding: EdgeInsets.only(right: isLast ? 0 : 10),
+            child: GestureDetector(
               onTap: a.onTap,
-              child: Column(
-                children: [
-                  Container(
-                    width: 62,
-                    height: 62,
-                    decoration: BoxDecoration(
-                      color: a.color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: a.color.withOpacity(0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
-                    child: Icon(a.icon, color: a.color, size: 26),
-                  ),
-                  const SizedBox(height: 7),
-                  Text(
-                    a.label,
-                    style: const TextStyle(
-                      color: AppColors.textMid,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            a.color.withOpacity(0.18),
+                            a.color.withOpacity(0.06),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(a.icon, color: a.color, size: 22),
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: 9),
+                    Text(
+                      a.label,
+                      style: const TextStyle(
+                        color: AppColors.textMid,
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
             ),
-          )
-          .toList(),
+          ),
+        );
+      }).toList(),
     );
   }
 }
 
+// ── Recent activities card ────────────────────────────────────────────────────
 class _RecentActivitiesCard extends StatelessWidget {
   final List<RecentActivity> activities;
   const _RecentActivitiesCard({required this.activities});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(title: 'Recent Activities'),
+        const SizedBox(height: 14),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.07),
+                blurRadius: 16,
+                offset: const Offset(0, 5),
+              ),
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Recent Activities',
-                  style: TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Text(
-                  'See all',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
+          child: Column(
+            children: [
+              ...activities.asMap().entries.map((e) {
+                final a = e.value;
+                final isLast = e.key == activities.length - 1;
+                return Column(
+                  children: [
+                    ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 2,
+                      ),
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(a.icon, color: AppColors.primary, size: 18),
+                      ),
+                      title: Text(
+                        a.title,
+                        style: const TextStyle(
+                          color: AppColors.textDark,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: Text(
+                        a.time,
+                        style: const TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                    if (!isLast)
+                      const Divider(
+                        color: AppColors.divider,
+                        height: 1,
+                        indent: 72,
+                      ),
+                  ],
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
           ),
-          const SizedBox(height: 8),
-          ...activities.asMap().entries.map((e) {
-            final a = e.value;
-            final isLast = e.key == activities.length - 1;
-            return Column(
-              children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 2,
-                  ),
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLight,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(a.icon, color: AppColors.primary, size: 18),
-                  ),
-                  title: Text(
-                    a.title,
-                    style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  trailing: Text(
-                    a.time,
-                    style: const TextStyle(
-                      color: AppColors.textLight,
-                      fontSize: 11,
-                    ),
-                  ),
-                ),
-                if (!isLast)
-                  const Divider(
-                    color: AppColors.divider,
-                    height: 1,
-                    indent: 72,
-                  ),
-              ],
-            );
-          }),
-          const SizedBox(height: 8),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
+// ── Section header ────────────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
@@ -800,7 +1195,7 @@ class _CallClientSheetState extends ConsumerState<_CallClientSheet> {
                                     false),
                           )
                           .toList();
-                if (filtered.isEmpty)
+                if (filtered.isEmpty) {
                   return Center(
                     child: Text(
                       clients.isEmpty ? 'No clients yet.' : 'No results found.',
@@ -811,6 +1206,7 @@ class _CallClientSheetState extends ConsumerState<_CallClientSheet> {
                       ),
                     ),
                   );
+                }
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: filtered.length,
@@ -833,6 +1229,7 @@ class _CallClientSheetState extends ConsumerState<_CallClientSheet> {
 class _ClientCallTile extends StatelessWidget {
   final ClientModel client;
   const _ClientCallTile({required this.client});
+
   Future<void> _call(BuildContext context) async {
     final raw = client.phone.replaceAll(RegExp(r'[\s\-()]'), '');
     final uri = Uri.parse('tel:$raw');
@@ -840,13 +1237,14 @@ class _ClientCallTile extends StatelessWidget {
       await launchUrl(uri);
     } else {
       await Clipboard.setData(ClipboardData(text: client.phone));
-      if (context.mounted)
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Copied: ${client.phone}'),
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
     }
   }
 

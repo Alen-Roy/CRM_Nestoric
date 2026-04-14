@@ -79,7 +79,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Delete Task?',
             style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700)),
         content: Text('"${task.title}" will be removed.',
@@ -141,7 +141,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                         decoration: BoxDecoration(
                             color: AppColors.primary,
                             borderRadius: BorderRadius.circular(12)),
-                        child: const Icon(Icons.add, color: AppColors.textDark, size: 22),
+                        child: const Icon(Icons.add, color: Colors.white, size: 22),
                       ),
                     ),
                   ]),
@@ -164,10 +164,11 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                             width: 54,
                             decoration: BoxDecoration(
                               color: isSel ? AppColors.primary : AppColors.surface,
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(16),
+                              border: isSel ? null : Border.all(color: AppColors.border),
                               boxShadow: isSel
                                   ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))]
-                                  : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
+                                  : [BoxShadow(color: AppColors.primary.withOpacity(0.04), blurRadius: 6)],
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -175,7 +176,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                                 Text(
                                   _dayNameFormat.format(d).toUpperCase(),
                                   style: TextStyle(
-                                      color: isSel ? AppColors.textMid : AppColors.textLight,
+                                      color: isSel ? Colors.white.withOpacity(0.8) : AppColors.textLight,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600),
                                 ),
@@ -333,11 +334,11 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.06),
+                                  color: AppColors.primaryLight,
                                   borderRadius: BorderRadius.circular(20)),
                               child: Text('${dayTasks.length}',
                                   style: const TextStyle(
-                                      color: AppColors.textMid,
+                                      color: AppColors.primary,
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700)),
                             ),
@@ -402,11 +403,15 @@ class _TaskPageState extends ConsumerState<TaskPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 40, height: 40,
+        width: 42, height: 42,
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+          ],
         ),
         child: Icon(icon, color: AppColors.textDark, size: 20),
       ),
@@ -447,7 +452,7 @@ class _PremiumTaskCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: scheme.bg,
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
                 color: scheme.bg.withOpacity(0.4),
@@ -576,10 +581,12 @@ class _StatsBanner extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 14, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

@@ -66,11 +66,15 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                     GestureDetector(
                       onTap: () => setState(() { _showSearch = !_showSearch; if (!_showSearch) { _searchQuery = ''; _controller.clear(); } }),
                       child: Container(
-                        width: 40, height: 40,
+                        width: 42, height: 42,
                         decoration: BoxDecoration(
                           color: _showSearch ? AppColors.primary : AppColors.surface,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: _showSearch ? AppColors.primarySoft : AppColors.border),
+                          boxShadow: [
+                            BoxShadow(color: AppColors.primary.withOpacity(_showSearch ? 0.25 : 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+                          ],
                         ),
                         child: Icon(Icons.search_rounded, color: _showSearch ? Colors.white : AppColors.textDark, size: 20),
                       ),
@@ -93,7 +97,7 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                           hintStyle: const TextStyle(color: AppColors.textLight),
                           prefixIcon: const Icon(Icons.search, color: AppColors.textLight, size: 20),
                           filled: true, fillColor: AppColors.surface,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                           contentPadding: const EdgeInsets.symmetric(vertical: 0),
                         ),
                       ),
@@ -121,9 +125,10 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                             decoration: BoxDecoration(
                               color: isSel ? AppColors.primary : AppColors.surface,
                               borderRadius: BorderRadius.circular(50),
+                              border: isSel ? null : Border.all(color: AppColors.border),
                               boxShadow: isSel
                                   ? [BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 10, offset: const Offset(0, 4))]
-                                  : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 4)],
+                                  : [],
                             ),
                             child: Text(_statuses[i], style: TextStyle(color: isSel ? Colors.white : AppColors.textMid, fontSize: 13, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500)),
                           ),
@@ -143,7 +148,7 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                   final shown = _filtered(clients);
                   if (shown.isEmpty) {
                     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Container(width: 70, height: 70, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(22)),
+                      Container(width: 70, height: 70, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(20)),
                           child: const Icon(Symbols.person, color: AppColors.primary, size: 34)),
                       const SizedBox(height: 14),
                       const Text('No clients found', style: TextStyle(color: AppColors.textMid, fontSize: 16, fontWeight: FontWeight.w600)),
@@ -180,8 +185,12 @@ class _ClientCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 14, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          ],
         ),
         child: Row(children: [
           // Avatar with status ring

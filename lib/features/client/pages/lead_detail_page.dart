@@ -158,7 +158,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Delete Lead?',
           style: TextStyle(
@@ -208,7 +208,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
         onPressed: _showLogActivitySheet,
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Log Activity', style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700)),
+        label: const Text('Log Activity', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
       ),
       body: CustomScrollView(
         slivers: [
@@ -338,65 +338,33 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
             _sectionTitle('Company Details'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _infoCard(
-                    Symbols.business,
-                    _lead.companyName ?? '—',
-                    'Company Name',
-                  ),
-                  const SizedBox(height: 10),
-                  _infoCard(
-                    Symbols.person,
-                    _lead.contactPerson ?? '—',
-                    'Contact Person',
-                  ),
-                  const SizedBox(height: 10),
-                  _infoCard(Symbols.location_city, _lead.city ?? '—', 'City'),
-                  const SizedBox(height: 10),
-                  _infoCard(Symbols.call, _lead.phone, 'Phone'),
-                  const SizedBox(height: 10),
-                  _infoCard(Symbols.mail, _lead.email ?? '—', 'Email'),
-                ],
-              ),
+              child: _infoGroup([
+                _infoRow(Symbols.business, _lead.companyName ?? '—', 'Company Name'),
+                _infoRow(Symbols.person, _lead.contactPerson ?? '—', 'Contact Person'),
+                _infoRow(Symbols.location_city, _lead.city ?? '—', 'City'),
+                _infoRow(Symbols.call, _lead.phone, 'Phone'),
+                _infoRow(Symbols.mail, _lead.email ?? '—', 'Email'),
+              ]),
             ),
 
             const SizedBox(height: 20),
             _sectionTitle('Service Details'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _infoCard(
-                    Symbols.home_repair_service,
-                    _lead.service ?? '—',
-                    'Service Interested In',
-                  ),
-                  const SizedBox(height: 10),
-                  _infoCard(
-                    Symbols.currency_rupee,
-                    _lead.amount ?? '—',
-                    'Estimated Value',
-                  ),
-                  const SizedBox(height: 10),
-                  _infoCard(
-                    Symbols.manage_accounts,
-                    _lead.assignTo ?? '—',
-                    'Assigned To',
-                  ),
-                ],
-              ),
+              child: _infoGroup([
+                _infoRow(Symbols.home_repair_service, _lead.service ?? '—', 'Service Interested In'),
+                _infoRow(Symbols.currency_rupee, _lead.amount ?? '—', 'Estimated Value'),
+                _infoRow(Symbols.manage_accounts, _lead.assignTo ?? '—', 'Assigned To'),
+              ]),
             ),
 
             const SizedBox(height: 20),
             _sectionTitle('Lead Source'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _infoCard(
-                Symbols.travel_explore,
-                _lead.leadSource ?? '—',
-                'Source',
-              ),
+              child: _infoGroup([
+                _infoRow(Symbols.travel_explore, _lead.leadSource ?? '—', 'Source'),
+              ]),
             ),
 
             const SizedBox(height: 20),
@@ -405,26 +373,21 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Column(
                 children: [
-                  _infoCard(
-                    Symbols.flag,
-                    _lead.priority ?? '—',
-                    'Lead Priority',
-                    valueColor: _priorityColor(_lead.priority),
-                  ),
+                  _infoGroup([
+                    _infoRow(Symbols.flag, _lead.priority ?? '—', 'Lead Priority',
+                        valueColor: _priorityColor(_lead.priority)),
+                  ]),
                   const SizedBox(height: 10),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: AppColors.border),
                       boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
+                        BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
                       ],
                     ),
                     child: Column(
@@ -510,25 +473,24 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
       child: Row(children: [
         Container(width: 3, height: 18, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
-        Text(title, style: const TextStyle(color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
+        Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
       ]),
     );
   }
 
+  // Single info row — used inside _infoGroup
   Widget _infoCard(IconData icon, String value, String label, {Color? valueColor}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
-      ),
+    return _infoRow(icon, value, label, valueColor: valueColor);
+  }
+
+  Widget _infoRow(IconData icon, String value, String label, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
       child: Row(children: [
         Container(
-          width: 36, height: 36,
+          width: 34, height: 34,
           decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: AppColors.primary, size: 18),
+          child: Icon(icon, color: AppColors.primary, size: 17),
         ),
         const SizedBox(width: 14),
         Flexible(
@@ -541,6 +503,31 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
           ]),
         ),
       ]),
+    );
+  }
+
+  // Grouped card that wraps multiple rows in a single surface with dividers
+  Widget _infoGroup(List<Widget> rows) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        children: rows.asMap().entries.map((e) {
+          final isLast = e.key == rows.length - 1;
+          return Column(children: [
+            e.value,
+            if (!isLast) const Divider(height: 1, thickness: 1, color: AppColors.divider, indent: 64, endIndent: 16),
+          ]);
+        }).toList(),
+      ),
     );
   }
 }
@@ -566,8 +553,12 @@ class _StagePipeline extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 16, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 18, offset: const Offset(0, 6)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+        ],
       ),
       child: Column(
         children: [

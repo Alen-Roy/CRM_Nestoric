@@ -16,9 +16,11 @@ abstract class AppColors {
   static const Color primaryLight= Color(0xFFEDE9FF);   // very light lavender
   static const Color primaryPale = Color(0xFFF5F3FF);   // almost-white purple
 
-  // ── Danger (only non-purple allowed)
+  // ── Semantic (non-purple, used sparingly)
   static const Color danger      = Color(0xFFE53935);
   static const Color dangerLight = Color(0xFFFFEBEB);
+  static const Color success     = Color(0xFF4CAF7D);   // won/positive
+  static const Color warning     = Color(0xFFFF8F00);   // medium/caution
 
   // ── Text
   static const Color textDark    = Color(0xFF1E1A3C);

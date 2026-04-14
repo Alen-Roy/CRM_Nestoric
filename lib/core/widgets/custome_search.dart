@@ -21,7 +21,7 @@ class _CustomeSearchState extends State<CustomeSearch> {
       margin: const EdgeInsets.only(top: 14),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _focused ? AppColors.primary : AppColors.border,
           width: _focused ? 1.5 : 1.0,

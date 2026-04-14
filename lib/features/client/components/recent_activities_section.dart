@@ -37,7 +37,7 @@ class RecentActivitiesSection extends StatelessWidget {
       else
         Container(
           decoration: BoxDecoration(
-            color: AppColors.surface, borderRadius: BorderRadius.circular(22),
+            color: AppColors.surface, borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.border),
             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 12, offset: const Offset(0, 4))],
           ),

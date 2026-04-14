@@ -41,7 +41,7 @@ class _TaskCardState extends State<TaskCard> {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             width: _drag.abs(),
-            decoration: BoxDecoration(color: AppColors.danger, borderRadius: BorderRadius.circular(22)),
+            decoration: BoxDecoration(color: AppColors.danger, borderRadius: BorderRadius.circular(20)),
             child: _drag.abs() > 44
                 ? IconButton(icon: const Icon(Icons.delete_outline, color: Colors.white, size: 22),
                     onPressed: () { setState(() => _drag = 0); widget.onDelete(); })
@@ -54,9 +54,12 @@ class _TaskCardState extends State<TaskCard> {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             color: _cardBg(null),
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(color: AppColors.border),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
+            boxShadow: [
+              BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, 4)),
+              BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+            ],
           ),
           child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

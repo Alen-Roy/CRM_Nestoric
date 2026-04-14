@@ -101,7 +101,7 @@ class AppTheme {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation:       8,
-        shape:           RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape:           RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
 
       // Dialogs — rounder

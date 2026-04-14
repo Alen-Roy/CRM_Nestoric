@@ -134,7 +134,7 @@ class ClientDetailPage extends ConsumerWidget {
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(22),
+                        borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(children: [
                         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -182,8 +182,11 @@ class ClientDetailPage extends ConsumerWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: AppColors.border),
+                        boxShadow: [
+                          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+                        ],
                       ),
                       child: Text(client.notes!, style: const TextStyle(color: AppColors.textMid, fontSize: 14, height: 1.5)),
                     ),
@@ -231,7 +234,13 @@ class ClientDetailPage extends ConsumerWidget {
     );
   }
 
-  Widget _sectionTitle(String title) => Text(title, style: const TextStyle(color: AppColors.textDark, fontSize: 17, fontWeight: FontWeight.w700));
+  Widget _sectionTitle(String title) {
+    return Row(children: [
+      Container(width: 3, height: 18, decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(2))),
+      const SizedBox(width: 8),
+      Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+    ]);
+  }
 
   Widget _infoGrid(List<_InfoItem> items) {
     return Column(
@@ -256,7 +265,11 @@ class ClientDetailPage extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
       ),
       child: Row(children: [
         Container(width: 34, height: 34, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
@@ -278,7 +291,11 @@ class ClientDetailPage extends ConsumerWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
       ),
       child: Row(children: [
         Container(width: 40, height: 40, decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
