@@ -27,8 +27,12 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> register(String email, String password, String name) async {
     state = AuthState(status: AuthStatus.loading);
     try {
-      await _repo.register(email, password);
+      final user = await _repo.register(email, password);
       await _repo.updateProfile(name);
+      // Write Firestore profile so role-check in main.dart works immediately
+      if (user != null) {
+        await _repo.createUserProfile(user.uid, email, name);
+      }
       state = AuthState(status: AuthStatus.authenticated);
     } catch (e) {
       state = AuthState(status: AuthStatus.error, errorMessage: e.toString());

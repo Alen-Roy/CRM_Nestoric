@@ -1,7 +1,9 @@
 import 'package:crm/core/constants/app_colors.dart';
+import 'package:crm/features/admin/pages/admin_dashboard_page.dart';
 import 'package:crm/features/auth/pages/login_page.dart';
 import 'package:crm/features/client/features/shell/main_shell.dart';
 import 'package:crm/viewmodels/auth_viewmodel.dart';
+import 'package:crm/viewmodels/user_role_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -28,9 +30,21 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(authProvider, (_, next) {
+    ref.listen(authProvider, (_, next) async {
       if (next.status == AuthStatus.authenticated) {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const MainShell()));
+        final profile = await ref.read(currentUserProfileProvider.future);
+        if (!context.mounted) return;
+        if (profile != null && profile.isAdmin) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainShell()),
+          );
+        }
       }
       if (next.status == AuthStatus.error) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -1,10 +1,11 @@
 import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/core/theme/app_theme.dart';
+import 'package:crm/features/admin/pages/admin_dashboard_page.dart';
 import 'package:crm/features/auth/pages/login_page.dart';
 import 'package:crm/firebase_options.dart';
 import 'package:crm/features/client/features/shell/main_shell.dart';
+import 'package:crm/viewmodels/user_role_viewmodel.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,24 +31,26 @@ void main() async {
   runApp(const ProviderScope(child: MainApp()));
 }
 
-class MainApp extends StatelessWidget {
+class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title:                    'Nexify CRM',
       theme:                    AppTheme.light,
       debugShowCheckedModeBanner: false,
-      home: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, snapshot) {
-          // Loading — premium splash
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const _SplashScreen();
-          }
-          final user = snapshot.data;
-          return user == null ? const LoginPage() : const MainShell();
+      home: ref.watch(currentUserProfileProvider).when(
+        // Loading — show premium splash
+        loading: () => const _SplashScreen(),
+        error:   (_, __) => const LoginPage(),
+        data: (userProfile) {
+          // Not logged in
+          if (userProfile == null) return const LoginPage();
+          // Admin → Admin dashboard
+          if (userProfile.isAdmin) return const AdminDashboardPage();
+          // Regular user → normal shell
+          return const MainShell();
         },
       ),
     );
