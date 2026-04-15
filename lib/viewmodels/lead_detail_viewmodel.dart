@@ -48,6 +48,17 @@ class LeadDetailNotifier extends Notifier<AsyncValue<void>> {
     }
   }
 
+  // ── Update all lead fields (called from EditLeadPage) ────────────────────
+  Future<void> updateLead(LeadModel lead) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repo.updateLead(lead);
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
   // ── Update lead notes ─────────────────────────────────────────────────────
   Future<void> updateNotes(LeadModel lead, String newNotes) async {
     state = const AsyncValue.loading();

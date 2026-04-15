@@ -151,7 +151,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                   // Google button
                   GestureDetector(
-                    onTap: () {},
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Row(children: [
+                            Icon(Icons.info_outline, color: Colors.white, size: 18),
+                            SizedBox(width: 10),
+                            Text('Google sign-in coming soon!'),
+                          ]),
+                          backgroundColor: AppColors.primary,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          duration: const Duration(seconds: 2),
+                        ),
+                      );
+                    },
                     child: Container(
                       width: double.infinity,
                       height: 52,
