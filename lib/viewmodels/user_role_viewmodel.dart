@@ -19,14 +19,15 @@ class AdminUserNotifier extends AsyncNotifier<void> {
   @override
   Future<void> build() async {}
 
-  Future<void> createAdmin({
+  Future<void> createUserAccount({
     required String email,
     required String password,
     required String name,
+    required bool isAdmin,
   }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => _repo.createAdminUser(email: email, password: password, name: name),
+      () => _repo.createUserAccount(email: email, password: password, name: name, isAdmin: isAdmin),
     );
   }
 

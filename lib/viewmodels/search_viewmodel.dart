@@ -12,7 +12,7 @@ class SearchResult {
   final String title;
   final String subtitle;
   final String? badge; // stage / status / priority
-  final Object data; // LeadModel | ClientModel | TaskModel
+  final Object data;
 
   const SearchResult({
     required this.type,
@@ -38,12 +38,8 @@ class SearchResults {
   int get total => leads.length + clients.length + tasks.length;
 }
 
-// ── Query state ───────────────────────────────────────────────────────────────
 final searchQueryProvider = StateProvider<String>((ref) => '');
 
-// ── Search provider ───────────────────────────────────────────────────────────
-// Pure in-memory filtering — reuses already-loaded Riverpod streams.
-// No extra Firestore reads.
 final searchResultsProvider = Provider<SearchResults>((ref) {
   final query = ref.watch(searchQueryProvider).trim().toLowerCase();
   if (query.length < 2) return const SearchResults();

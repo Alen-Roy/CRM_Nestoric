@@ -5,38 +5,37 @@ class TaskRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _collection = 'tasks';
 
-  /// Add a new task to Firestore.
-  Future<void> addTask(TaskModel task) async {
-    await _firestore.collection(_collection).add(task.toMap());
-  }
+  Future<void> addTask(TaskModel task) async =>
+      _firestore.collection(_collection).add(task.toMap());
 
-  /// Real-time stream of tasks for a given user, ordered by scheduledAt.
-  /// Sorting is done in Dart to avoid requiring a composite Firestore index.
-  Stream<List<TaskModel>> getTasks(String userId) {
-    return _firestore
-        .collection(_collection)
-        .where('userId', isEqualTo: userId)
-        .snapshots()
-        .map((snapshot) {
-          final tasks = snapshot.docs
-              .map((doc) => TaskModel.fromMap(doc.data(), doc.id))
-              .toList();
-          tasks.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
-          return tasks;
-        });
-  }
+  /// Tasks created by this user (self-created)
+  Stream<List<TaskModel>> getTasks(String userId) => _firestore
+      .collection(_collection)
+      .where('userId', isEqualTo: userId)
+      .snapshots()
+      .map((s) {
+        final tasks = s.docs.map((d) => TaskModel.fromMap(d.data(), d.id)).toList();
+        tasks.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+        return tasks;
+      });
 
-  /// Toggle done / undo on a task.
+  /// Tasks assigned TO this worker by the admin
+  Stream<List<TaskModel>> getAdminAssignedTasks(String workerUid) => _firestore
+      .collection(_collection)
+      .where('assignedTo', isEqualTo: workerUid)
+      .where('isAdminTask', isEqualTo: true)
+      .snapshots()
+      .map((s) {
+        final tasks = s.docs.map((d) => TaskModel.fromMap(d.data(), d.id)).toList();
+        tasks.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+        return tasks;
+      });
+
   Future<void> updateTask(TaskModel task) async {
     if (task.id == null) throw Exception('Cannot update task without ID');
-    await _firestore
-        .collection(_collection)
-        .doc(task.id)
-        .update(task.toMap());
+    await _firestore.collection(_collection).doc(task.id).update(task.toMap());
   }
 
-  /// Delete a task.
-  Future<void> deleteTask(String id) async {
-    await _firestore.collection(_collection).doc(id).delete();
-  }
+  Future<void> deleteTask(String id) =>
+      _firestore.collection(_collection).doc(id).delete();
 }

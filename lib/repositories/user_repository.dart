@@ -47,11 +47,12 @@ class UserRepository {
     await _db.collection('users').doc(uid).update({'isAdmin': isAdmin});
   }
 
-  // ── Create a new admin account (from admin dashboard) ──────────────────────
-  Future<String> createAdminUser({
+  // ── Create a new account (from admin dashboard) ────────────────────────────
+  Future<String> createUserAccount({
     required String email,
     required String password,
     required String name,
+    required bool isAdmin,
   }) async {
     // Use a secondary FirebaseApp so the admin stays signed in
     FirebaseApp? secondaryApp;
@@ -67,12 +68,12 @@ class UserRepository {
       );
       final newUid = result.user!.uid;
       await result.user!.updateDisplayName(name);
-      // Write Firestore doc with isAdmin: true
+      // Write Firestore doc with appropriate role
       await _db.collection('users').doc(newUid).set(UserModel(
             uid: newUid,
             email: email,
             name: name,
-            isAdmin: true,
+            isAdmin: isAdmin,
             createdAt: DateTime.now(),
           ).toMap());
       await secondaryAuth.signOut();

@@ -1,6 +1,5 @@
 import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/features/admin/pages/admin_dashboard_page.dart';
-import 'package:crm/features/auth/pages/register_page.dart';
 import 'package:crm/features/client/features/shell/main_shell.dart';
 import 'package:crm/viewmodels/auth_viewmodel.dart';
 import 'package:crm/viewmodels/user_role_viewmodel.dart';
@@ -197,19 +196,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ]),
                     ),
                   ),
-                  const SizedBox(height: 28),
-
-                  // Sign up link
-                  Center(
-                    child: GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterPage())),
-                      child: Text.rich(TextSpan(
-                        text: "Don't have an account? ",
-                        style: const TextStyle(color: AppColors.textMid, fontSize: 14),
-                        children: const [TextSpan(text: 'Sign up', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700))],
-                      )),
-                    ),
-                  ),
+                  const SizedBox(height: 10),
                 ],
               ),
             ),
