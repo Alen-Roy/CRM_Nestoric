@@ -85,7 +85,6 @@ class ClientDetailPage extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const SizedBox(height: 30),
-                      // Avatar with status ring
                       Container(
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
