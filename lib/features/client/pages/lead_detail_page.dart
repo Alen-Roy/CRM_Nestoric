@@ -5,6 +5,8 @@ import 'package:crm/models/activity_model.dart';
 import 'package:crm/models/lead_model.dart';
 import 'package:crm/viewmodels/activity_viewmodel.dart';
 import 'package:crm/viewmodels/lead_detail_viewmodel.dart';
+import 'package:crm/viewmodels/meeting_session_viewmodel.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -24,6 +26,13 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
   void initState() {
     super.initState();
     _lead = widget.lead;
+    // Restore any active meeting session for this user
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        ref.read(meetingSessionProvider.notifier).loadActiveSession(uid);
+      }
+    });
   }
 
   Color _stageColor(String stage) {
@@ -106,9 +115,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
               Container(
                 width: 90, height: 90,
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.15),
+                  color: AppColors.primary.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 30, spreadRadius: 5)],
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 30, spreadRadius: 5)],
                 ),
                 child: const Center(child: Icon(Icons.emoji_events_rounded, color: Colors.white, size: 48)),
               ),
@@ -127,9 +136,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
                 height: 50,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
+                    color: AppColors.primary.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.5)),
+                    border: Border.all(color: AppColors.primary.withValues(alpha: 0.5)),
                   ),
                   child: TextButton(
                     onPressed: () { Navigator.pop(ctx); Navigator.pop(context); },
@@ -256,7 +265,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [_stageColor(_lead.stage), _stageColor(_lead.stage).withOpacity(0.7)],
+                    colors: [_stageColor(_lead.stage), _stageColor(_lead.stage).withValues(alpha: 0.7)],
                     begin: Alignment.topLeft, end: Alignment.bottomRight,
                   ),
                 ),
@@ -336,9 +345,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      color: AppColors.danger.withOpacity(0.06),
+                      color: AppColors.danger.withValues(alpha: 0.06),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: AppColors.danger.withOpacity(0.35)),
+                      border: Border.all(color: AppColors.danger.withValues(alpha: 0.35)),
                     ),
                     child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(Icons.close_rounded, color: AppColors.danger, size: 16),
@@ -403,6 +412,9 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
             ),
 
             const SizedBox(height: 20),
+            _MeetingLocationCard(lead: _lead),
+
+            const SizedBox(height: 20),
             _sectionTitle('Activity History'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -410,10 +422,11 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
                 data: (activities) => ActivityTimeline(
                   activities: activities,
                   onDelete: (activity) {
-                    if (activity.id != null)
+                    if (activity.id != null) {
                       ref
                           .read(logActivityProvider.notifier)
                           .deleteActivity(activity.id!);
+                    }
                   },
                 ),
                 loading: () => const Center(
@@ -445,7 +458,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
     return Container(
       width: 38, height: 38,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.18),
+        color: color.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(icon, color: color, size: 18),
@@ -463,10 +476,7 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
     );
   }
 
-  // Single info row — used inside _infoGroup
-  Widget _infoCard(IconData icon, String value, String label, {Color? valueColor}) {
-    return _infoRow(icon, value, label, valueColor: valueColor);
-  }
+
 
   Widget _infoRow(IconData icon, String value, String label, {Color? valueColor}) {
     return Padding(
@@ -500,8 +510,8 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 4)),
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 5, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -541,8 +551,8 @@ class _StagePipeline extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 18, offset: const Offset(0, 6)),
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 18, offset: const Offset(0, 6)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -570,7 +580,7 @@ class _StagePipeline extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: (isPast || isCurrent) ? color : AppColors.border,
                                 shape: BoxShape.circle,
-                                boxShadow: isCurrent ? [BoxShadow(color: color.withOpacity(0.4), blurRadius: 6, spreadRadius: 1)] : [],
+                                boxShadow: isCurrent ? [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 6, spreadRadius: 1)] : [],
                               ),
                             ),
                             if (!isLast)
@@ -605,7 +615,7 @@ class _StagePipeline extends StatelessWidget {
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 14, offset: const Offset(0, 6))],
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 14, offset: const Offset(0, 6))],
                 ),
                 child: ElevatedButton(
                   onPressed: () {
@@ -629,7 +639,7 @@ class _StagePipeline extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: AppColors.primary.withOpacity(0.1),
+                color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AppColors.primary),
               ),
@@ -735,10 +745,10 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
                       margin: const EdgeInsets.only(right: 8),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
-                        color: isSel ? accent.withOpacity(0.12) : AppColors.background,
+                        color: isSel ? accent.withValues(alpha: 0.12) : AppColors.background,
                         borderRadius: BorderRadius.circular(50),
                         border: Border.all(color: isSel ? accent : AppColors.border, width: isSel ? 1.5 : 1),
-                        boxShadow: isSel ? [BoxShadow(color: accent.withOpacity(0.2), blurRadius: 8, offset: const Offset(0,3))] : [],
+                        boxShadow: isSel ? [BoxShadow(color: accent.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0,3))] : [],
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Icon(type.icon, color: isSel ? accent : AppColors.textMid, size: 16),
@@ -792,7 +802,7 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withOpacity(0.25),
+                      color: AppColors.primary.withValues(alpha: 0.25),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -922,8 +932,8 @@ class _EditableNotesCardState extends ConsumerState<_EditableNotesCard> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _editing ? AppColors.primary : AppColors.border, width: _editing ? 1.5 : 1),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 4)),
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 5, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -1007,6 +1017,211 @@ class _EditableNotesCardState extends ConsumerState<_EditableNotesCard> {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Meeting Location Card  (Salesperson side)
+// ─────────────────────────────────────────────────────────────────────────────
+class _MeetingLocationCard extends ConsumerWidget {
+  final LeadModel lead;
+  const _MeetingLocationCard({required this.lead});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sessionState = ref.watch(meetingSessionProvider);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return const SizedBox.shrink();
+
+    // Only show this card for the lead that owns the current active session,
+    // OR when there is no active session (so salesperson can start one).
+    final active = sessionState.activeSession;
+    final isThisLead = active?.leadId == lead.id;
+    final inOtherMeeting = active != null && !isThisLead;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: (active != null && isThisLead)
+                ? AppColors.success.withValues(alpha: 0.5)
+                : AppColors.border,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Header row ──────────────────────────────────────────────────
+            Row(children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: (active != null && isThisLead)
+                      ? AppColors.success.withValues(alpha: 0.12)
+                      : AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Symbols.location_on,
+                  size: 18,
+                  color: (active != null && isThisLead)
+                      ? AppColors.success
+                      : AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Meeting Check-In',
+                      style: TextStyle(
+                        color: AppColors.textDark,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      (active != null && isThisLead)
+                          ? '🟢 Meeting in progress — manager can see your location'
+                          : inOtherMeeting
+                              ? '⚠️ You are already in a meeting for another lead'
+                              : 'Share your live location when meeting starts',
+                      style: const TextStyle(
+                          color: AppColors.textMid, fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+            const SizedBox(height: 14),
+
+            // ── Loading indicator ────────────────────────────────────────────
+            if (sessionState.isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 6),
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                        color: AppColors.primary, strokeWidth: 2),
+                  ),
+                ),
+              )
+            else ...[
+              // ── Error ──────────────────────────────────────────────────────
+              if (sessionState.error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    sessionState.error!,
+                    style: const TextStyle(
+                        color: AppColors.danger, fontSize: 11),
+                  ),
+                ),
+
+              // ── Start Meeting button ───────────────────────────────────────
+              if (active == null)
+                _MeetingButton(
+                  label: 'Start Meeting',
+                  icon: Symbols.play_circle,
+                  color: AppColors.success,
+                  onTap: () async {
+                    final err = await ref
+                        .read(meetingSessionProvider.notifier)
+                        .startMeeting(
+                          userId: user.uid,
+                          workerName:
+                              user.displayName ?? user.email ?? 'Salesperson',
+                          leadId: lead.id ?? '',
+                          leadName: lead.name,
+                        );
+                    if (err != null && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(err),
+                        backgroundColor: AppColors.danger,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
+                  },
+                )
+
+              // ── End Meeting button (only for THIS lead's active session) ───
+              else if (isThisLead)
+                _MeetingButton(
+                  label: 'End Meeting',
+                  icon: Symbols.stop_circle,
+                  color: AppColors.danger,
+                  onTap: () async {
+                    final err = await ref
+                        .read(meetingSessionProvider.notifier)
+                        .endMeeting();
+                    if (err != null && context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text(err),
+                        backgroundColor: AppColors.danger,
+                        behavior: SnackBarBehavior.floating,
+                      ));
+                    }
+                  },
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MeetingButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _MeetingButton(
+      {required this.label,
+      required this.icon,
+      required this.color,
+      required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 13),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+                color: color, fontSize: 14, fontWeight: FontWeight.w700),
+          ),
+        ]),
       ),
     );
   }

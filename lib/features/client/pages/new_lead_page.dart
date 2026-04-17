@@ -137,8 +137,8 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.border),
                       boxShadow: [
-                        BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
-                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+                        BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 5, offset: const Offset(0, 2)),
                       ],
                     ),
                     child: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 16),
@@ -251,7 +251,7 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                                   borderRadius: BorderRadius.circular(50),
                                   border: Border.all(color: isSel ? AppColors.primary : AppColors.border),
                                   boxShadow: isSel
-                                      ? [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))]
+                                      ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3))]
                                       : [],
                                 ),
                                 child: Text(s,
@@ -312,7 +312,7 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                   decoration: BoxDecoration(
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.32), blurRadius: 20, offset: const Offset(0, 8))],
+                    boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.32), blurRadius: 20, offset: const Offset(0, 8))],
                   ),
                   child: ElevatedButton(
                     onPressed: _save,
@@ -357,8 +357,8 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -366,7 +366,7 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 18),
@@ -438,7 +438,7 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSel ? color.withOpacity(0.10) : AppColors.background,
+            color: isSel ? color.withValues(alpha: 0.10) : AppColors.background,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isSel ? color : AppColors.border, width: isSel ? 1.5 : 1),
           ),

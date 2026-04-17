@@ -15,12 +15,10 @@ class AppTheme {
         primary:      AppColors.primary,
         secondary:    AppColors.primaryGlow,
         surface:      AppColors.surface,
-        background:   AppColors.background,
         error:        AppColors.danger,
         onPrimary:    Colors.white,
         onSecondary:  Colors.white,
         onSurface:    AppColors.textDark,
-        onBackground: AppColors.textDark,
       ),
 
       appBarTheme: const AppBarTheme(
@@ -133,8 +131,8 @@ class AppTheme {
 
       dividerColor:    AppColors.divider,
       dividerTheme:    const DividerThemeData(color: AppColors.divider, thickness: 1, space: 1),
-      splashColor:     AppColors.primary.withOpacity(0.08),
-      highlightColor:  AppColors.primary.withOpacity(0.05),
+      splashColor:     AppColors.primary.withValues(alpha: 0.08),
+      highlightColor:  AppColors.primary.withValues(alpha: 0.05),
 
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color:            AppColors.primary,

@@ -133,7 +133,7 @@ class _EditLeadPageState extends ConsumerState<EditLeadPage> {
                       color: AppColors.surface,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [BoxShadow(
-                          color: Colors.black.withOpacity(0.06), blurRadius: 8)],
+                          color: Colors.black.withValues(alpha: 0.06), blurRadius: 8)],
                     ),
                     child: const Icon(Icons.arrow_back_ios_new,
                         color: AppColors.textDark, size: 16),
@@ -320,7 +320,7 @@ class _EditLeadPageState extends ConsumerState<EditLeadPage> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [BoxShadow(
-                        color: AppColors.primary.withOpacity(0.32),
+                        color: AppColors.primary.withValues(alpha: 0.32),
                         blurRadius: 20,
                         offset: const Offset(0, 8))],
                   ),
@@ -375,7 +375,7 @@ class _EditLeadPageState extends ConsumerState<EditLeadPage> {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(22),
         boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 14,
             offset: const Offset(0, 4))],
       ),
@@ -384,7 +384,7 @@ class _EditLeadPageState extends ConsumerState<EditLeadPage> {
           Container(
             width: 36, height: 36,
             decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10)),
             child: Icon(icon, color: color, size: 18),
           ),
@@ -467,7 +467,7 @@ class _EditLeadPageState extends ConsumerState<EditLeadPage> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: isSel ? color.withOpacity(0.12) : AppColors.background,
+            color: isSel ? color.withValues(alpha: 0.12) : AppColors.background,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
                 color: isSel ? color : AppColors.border,

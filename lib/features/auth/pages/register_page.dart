@@ -87,7 +87,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         style: TextStyle(color: AppColors.textDark, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                     const SizedBox(height: 4),
                     Text('Join Nexify CRM today',
-                        style: TextStyle(color: Colors.white.withOpacity(0.75), fontSize: 13)),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 13)),
                   ],
                 ),
               ),
@@ -182,7 +182,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
         ),
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,

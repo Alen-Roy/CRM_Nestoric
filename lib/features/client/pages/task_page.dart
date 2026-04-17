@@ -53,9 +53,11 @@ class _TaskPageState extends ConsumerState<TaskPage> {
 
   // Card color scheme — cycles through 3 variants
   _CardScheme _scheme(int index, bool isDone) {
-    if (isDone) return const _CardScheme(
-      bg: AppColors.background, fg: AppColors.textLight,
-      tag: AppColors.textLight, tagBg: AppColors.border);
+    if (isDone) {
+      return const _CardScheme(
+        bg: AppColors.background, fg: AppColors.textLight,
+        tag: AppColors.textLight, tagBg: AppColors.border);
+    }
     final schemes = [
       const _CardScheme(bg: AppColors.primaryLight, fg: AppColors.primary,  tag: AppColors.primary,  tagBg: AppColors.primarySoft),
       const _CardScheme(bg: AppColors.surface,      fg: AppColors.textDark, tag: AppColors.textMid,  tagBg: AppColors.primaryPale),
@@ -70,7 +72,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
       bg:    AppColors.dangerLight,
       fg:    AppColors.danger,
       tag:   AppColors.danger,
-      tagBg: AppColors.danger.withOpacity(0.12),
+      tagBg: AppColors.danger.withValues(alpha: 0.12),
     );
   }
 
@@ -167,8 +169,8 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                               borderRadius: BorderRadius.circular(16),
                               border: isSel ? null : Border.all(color: AppColors.border),
                               boxShadow: isSel
-                                  ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))]
-                                  : [BoxShadow(color: AppColors.primary.withOpacity(0.04), blurRadius: 6)],
+                                  ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))]
+                                  : [BoxShadow(color: AppColors.primary.withValues(alpha: 0.04), blurRadius: 6)],
                             ),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
@@ -176,7 +178,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                                 Text(
                                   _dayNameFormat.format(d).toUpperCase(),
                                   style: TextStyle(
-                                      color: isSel ? Colors.white.withOpacity(0.8) : AppColors.textLight,
+                                      color: isSel ? Colors.white.withValues(alpha: 0.8) : AppColors.textLight,
                                       fontSize: 10,
                                       fontWeight: FontWeight.w600),
                                 ),
@@ -265,7 +267,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                             Container(
                               width: 28, height: 28,
                               decoration: BoxDecoration(
-                                  color: AppColors.danger.withOpacity(0.1),
+                                  color: AppColors.danger.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(8)),
                               child: const Icon(Icons.warning_amber_rounded,
                                   color: AppColors.danger, size: 16),
@@ -281,7 +283,7 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
-                                  color: AppColors.danger.withOpacity(0.12),
+                                  color: AppColors.danger.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(20)),
                               child: Text('${overdue.length}',
                                   style: const TextStyle(
@@ -409,8 +411,8 @@ class _TaskPageState extends ConsumerState<TaskPage> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.border),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
-            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 5, offset: const Offset(0, 2)),
           ],
         ),
         child: Icon(icon, color: AppColors.textDark, size: 20),
@@ -455,7 +457,7 @@ class _PremiumTaskCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-                color: scheme.bg.withOpacity(0.4),
+                color: scheme.bg.withValues(alpha: 0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 6)),
           ],
@@ -485,7 +487,7 @@ class _PremiumTaskCard extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                            color: AppColors.danger.withOpacity(0.18),
+                            color: AppColors.danger.withValues(alpha: 0.18),
                             borderRadius: BorderRadius.circular(20)),
                         child: Text(overdueLabel!,
                             style: const TextStyle(
@@ -506,7 +508,7 @@ class _PremiumTaskCard extends StatelessWidget {
                       letterSpacing: -0.5,
                       height: 1.1,
                       decoration: task.isDone ? TextDecoration.lineThrough : TextDecoration.none,
-                      decorationColor: scheme.fg.withOpacity(0.5),
+                      decorationColor: scheme.fg.withValues(alpha: 0.5),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -521,7 +523,7 @@ class _PremiumTaskCard extends StatelessWidget {
               children: [
                 Text('Start',
                     style: TextStyle(
-                        color: scheme.fg.withOpacity(0.6),
+                        color: scheme.fg.withValues(alpha: 0.6),
                         fontSize: 11,
                         fontWeight: FontWeight.w500)),
                 const SizedBox(height: 4),
@@ -536,7 +538,7 @@ class _PremiumTaskCard extends StatelessWidget {
                   child: Container(
                     width: 32, height: 32,
                     decoration: BoxDecoration(
-                        color: scheme.fg.withOpacity(0.15),
+                        color: scheme.fg.withValues(alpha: 0.15),
                         shape: BoxShape.circle),
                     child: Icon(
                       task.isDone
@@ -584,8 +586,8 @@ class _StatsBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 5)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
           ],
         ),
         child: Column(
@@ -605,7 +607,7 @@ class _StatsBanner extends StatelessWidget {
               _statBox('$todayCount',   "Today's",   AppColors.primary,     Colors.white),
               const SizedBox(width: 10),
               _statBox('$overdueCount', 'Overdue',
-                overdueCount > 0 ? AppColors.danger.withOpacity(0.15) : AppColors.border,
+                overdueCount > 0 ? AppColors.danger.withValues(alpha: 0.15) : AppColors.border,
                 overdueCount > 0 ? AppColors.danger : AppColors.textLight,
               ),
             ]),
@@ -623,7 +625,7 @@ class _StatsBanner extends StatelessWidget {
         child: Column(children: [
           Text(value, style: TextStyle(color: fg, fontSize: 20, fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(color: fg.withOpacity(0.7), fontSize: 9, fontWeight: FontWeight.w600)),
+          Text(label, style: TextStyle(color: fg.withValues(alpha: 0.7), fontSize: 9, fontWeight: FontWeight.w600)),
         ]),
       ),
     );

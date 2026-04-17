@@ -51,14 +51,14 @@ class ActivityTimeline extends StatelessWidget {
             SizedBox(width: 36, child: Column(children: [
               Container(
                 width: 36, height: 36,
-                decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle,
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle,
                     border: Border.all(color: color, width: 1.5)),
                 child: Icon(activity.type.icon, color: color, size: 16),
               ),
               if (!isLast) Expanded(child: Container(
                 width: 2, margin: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(gradient: LinearGradient(
-                  colors: [color.withOpacity(0.3), AppColors.border],
+                  colors: [color.withValues(alpha: 0.3), AppColors.border],
                   begin: Alignment.topCenter, end: Alignment.bottomCenter)),
               )),
             ])),
@@ -70,13 +70,13 @@ class ActivityTimeline extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: bg, borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppColors.border),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 3))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3))],
                 ),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
                       child: Text(activity.type.label, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
                     ),
                     const Spacer(),

@@ -413,12 +413,12 @@ class _HomePageState extends ConsumerState<HomePage> {
           border: Border.all(color: AppColors.border),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withOpacity(0.07),
+              color: AppColors.primary.withValues(alpha: 0.07),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -504,12 +504,12 @@ class _RevenueCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 24,
             offset: const Offset(0, 8),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
             offset: const Offset(0, 3),
           ),
@@ -609,7 +609,7 @@ class _RevenueCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -679,12 +679,12 @@ class _PipelineStrip extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.08),
+            color: AppColors.primary.withValues(alpha: 0.08),
             blurRadius: 16,
             offset: const Offset(0, 5),
           ),
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
@@ -820,12 +820,12 @@ class _TodaysTasksCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.08),
+                color: AppColors.primary.withValues(alpha: 0.08),
                 blurRadius: 16,
                 offset: const Offset(0, 5),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -892,7 +892,7 @@ class _TodaysTasksCard extends StatelessWidget {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: priColor.withOpacity(0.10),
+                              color: priColor.withValues(alpha: 0.10),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
@@ -986,7 +986,7 @@ class _QuickActionsGrid extends StatelessWidget {
                   border: Border.all(color: AppColors.border),
                   boxShadow: [
                     BoxShadow(
-                      color: a.color.withOpacity(0.08),
+                      color: a.color.withValues(alpha: 0.08),
                       blurRadius: 16,
                       offset: const Offset(0, 6),
                     ),
@@ -1001,8 +1001,8 @@ class _QuickActionsGrid extends StatelessWidget {
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           colors: [
-                            a.color.withOpacity(0.18),
-                            a.color.withOpacity(0.06),
+                            a.color.withValues(alpha: 0.18),
+                            a.color.withValues(alpha: 0.06),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -1052,12 +1052,12 @@ class _RecentActivitiesCard extends StatelessWidget {
             border: Border.all(color: AppColors.border),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.07),
+                color: AppColors.primary.withValues(alpha: 0.07),
                 blurRadius: 16,
                 offset: const Offset(0, 5),
               ),
               BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -1323,7 +1323,7 @@ class _ClientCallTile extends StatelessWidget {
           width: 36,
           height: 36,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: const Icon(Symbols.call, color: AppColors.primary, size: 18),
@@ -1358,12 +1358,12 @@ class _ManagerNoticesBannerState extends State<_ManagerNoticesBanner> {
           begin: Alignment.topLeft, end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.30), blurRadius: 16, offset: const Offset(0, 6))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.30), blurRadius: 16, offset: const Offset(0, 6))],
       ),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Container(
           width: 38, height: 38,
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
           child: const Icon(Icons.campaign_outlined, color: Colors.white, size: 20),
         ),
         const SizedBox(width: 12),
@@ -1372,15 +1372,15 @@ class _ManagerNoticesBannerState extends State<_ManagerNoticesBanner> {
           const SizedBox(height: 3),
           Text(notice.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 4),
-          Text(notice.body, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
+          Text(notice.body, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
           const SizedBox(height: 6),
-          Text('— ${notice.adminName}', style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 11)),
+          Text('— ${notice.adminName}', style: TextStyle(color: Colors.white.withValues(alpha: 0.65), fontSize: 11)),
         ])),
         GestureDetector(
           onTap: () => setState(() => _dismissed = true),
           child: Container(
             padding: const EdgeInsets.all(4),
-            child: Icon(Icons.close_rounded, color: Colors.white.withOpacity(0.7), size: 16),
+            child: Icon(Icons.close_rounded, color: Colors.white.withValues(alpha: 0.7), size: 16),
           ),
         ),
       ]),
@@ -1405,7 +1405,7 @@ class _AdminTasksSection extends ConsumerWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primarySoft),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 5))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         // Header
@@ -1439,7 +1439,7 @@ class _AdminTasksSection extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: AppColors.background,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isOverdue ? AppColors.danger.withOpacity(0.3) : AppColors.border),
+                border: Border.all(color: isOverdue ? AppColors.danger.withValues(alpha: 0.3) : AppColors.border),
               ),
               child: Row(children: [
                 Container(
@@ -1461,7 +1461,7 @@ class _AdminTasksSection extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(color: priColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(color: priColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                     child: Text(task.priority, style: TextStyle(color: priColor, fontSize: 9, fontWeight: FontWeight.w700)),
                   ),
                 ]),

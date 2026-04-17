@@ -97,7 +97,7 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
             surface: AppColors.surface,
             onSurface: AppColors.textDark,
           ),
-          dialogBackgroundColor: AppColors.surface,
+          dialogTheme: const DialogThemeData(backgroundColor: AppColors.surface),
         ),
         child: child!,
       ),
@@ -143,8 +143,8 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.border),
                       boxShadow: [
-                        BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
-                        BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+                        BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 5, offset: const Offset(0, 2)),
                       ],
                     ),
                     child: const Icon(Icons.arrow_back_ios_new,
@@ -177,7 +177,7 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: AppColors.border),
                         boxShadow: [BoxShadow(
-                            color: AppColors.primary.withOpacity(0.06),
+                            color: AppColors.primary.withValues(alpha: 0.06),
                             blurRadius: 12,
                             offset: const Offset(0, 4))],
                       ),
@@ -308,7 +308,7 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
                     gradient: AppColors.primaryGradient,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.primary.withValues(alpha: 0.3),
                         blurRadius: 18,
                         offset: const Offset(0, 8))],
                   ),
@@ -355,15 +355,15 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: AppColors.border),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 5, offset: const Offset(0, 2)),
           ],
         ),
         child: Row(children: [
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-                color: color.withOpacity(0.10),
+                color: color.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 20),
           ),
@@ -399,8 +399,8 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -431,7 +431,7 @@ class _TaskAddPageState extends ConsumerState<TaskAddPage> {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(
-            color: isSel ? color.withOpacity(0.10) : AppColors.background,
+            color: isSel ? color.withValues(alpha: 0.10) : AppColors.background,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isSel ? color : AppColors.border,

@@ -144,8 +144,8 @@ class _GlobalSearchPageState extends ConsumerState<GlobalSearchPage> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: AppColors.border),
                           boxShadow: [
-                            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
-                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
+                            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 5, offset: const Offset(0, 2)),
                           ],
                         ),
                         child: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 16),
@@ -162,8 +162,8 @@ class _GlobalSearchPageState extends ConsumerState<GlobalSearchPage> {
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: AppColors.border),
                       boxShadow: [
-                        BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 5)),
-                        BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                        BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 5)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
                       ],
                     ),
                     child: TextField(
@@ -281,7 +281,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 10),
         Container(
           padding: const EdgeInsets.all(5),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
           child: Icon(icon, color: color, size: 15),
         ),
         const SizedBox(width: 8),
@@ -289,7 +289,7 @@ class _SectionHeader extends StatelessWidget {
         const SizedBox(width: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-          decoration: BoxDecoration(color: color.withOpacity(0.10), borderRadius: BorderRadius.circular(20)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(20)),
           child: Text('$count', style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
         ),
       ]),
@@ -359,8 +359,8 @@ class _ResultTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: AppColors.border),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, 4)),
-            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 14, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 5, offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -432,7 +432,7 @@ class _LeadTile extends StatelessWidget {
           : Text(lead.phone, style: const TextStyle(color: AppColors.textMid, fontSize: 12)),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: stageC.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: stageC.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
         child: Text(lead.stage, style: TextStyle(color: stageC, fontSize: 10, fontWeight: FontWeight.w700)),
       ),
     );
@@ -463,7 +463,7 @@ class _ClientTile extends StatelessWidget {
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ClientDetailPage(client: client))),
       leading: CircleAvatar(
         radius: 20,
-        backgroundColor: statusC.withOpacity(0.15),
+        backgroundColor: statusC.withValues(alpha: 0.15),
         child: Text(initials, style: TextStyle(color: statusC, fontWeight: FontWeight.w700, fontSize: 13)),
       ),
       title: _Highlighted(
@@ -480,7 +480,7 @@ class _ClientTile extends StatelessWidget {
           : Text(client.phone, style: const TextStyle(color: AppColors.textMid, fontSize: 12)),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: statusC.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: statusC.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
         child: Text(client.status, style: TextStyle(color: statusC, fontSize: 10, fontWeight: FontWeight.w700)),
       ),
     );
@@ -515,7 +515,7 @@ class _TaskTile extends StatelessWidget {
       leading: Container(
         width: 40, height: 40,
         decoration: BoxDecoration(
-          color: task.isDone ? AppColors.border : priC.withOpacity(0.12),
+          color: task.isDone ? AppColors.border : priC.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
@@ -550,7 +550,7 @@ class _TaskTile extends StatelessWidget {
       ),
       trailing: Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration: BoxDecoration(color: priC.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: priC.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
         child: Text(task.priority, style: TextStyle(color: priC, fontSize: 10, fontWeight: FontWeight.w700)),
       ),
     );
@@ -590,7 +590,7 @@ void _showTaskSheet(BuildContext context, TaskModel task) {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: priC.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+                decoration: BoxDecoration(color: priC.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
                 child: Icon(Symbols.task_alt, color: priC, size: 22),
               ),
               const SizedBox(width: 14),
@@ -641,7 +641,7 @@ class _InfoChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
       child: Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700)),
     );
   }

@@ -1,4 +1,6 @@
 import 'package:crm/core/constants/app_colors.dart';
+import 'package:crm/viewmodels/meeting_session_viewmodel.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:crm/features/admin/pages/worker_report_page.dart';
 import 'package:crm/features/admin/viewmodels/admin_viewmodel.dart';
 import 'package:crm/features/auth/pages/login_page.dart';
@@ -739,7 +741,7 @@ class _WorkersTab extends ConsumerWidget {
   }
 }
 
-class _WorkerCard extends StatelessWidget {
+class _WorkerCard extends ConsumerWidget {
   final WorkerSummary summary;
   final int rank;
   const _WorkerCard({required this.summary, required this.rank});
@@ -747,9 +749,12 @@ class _WorkerCard extends StatelessWidget {
   String _fmt(double v) => v >= 1000 ? '₹${(v / 1000).toStringAsFixed(1)}k' : '₹${v.toStringAsFixed(0)}';
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final medals = ['🥇', '🥈', '🥉'];
     final medal  = rank <= 3 ? medals[rank - 1] : '#$rank';
+    
+    final sessionAsync = ref.watch(workerSessionStreamProvider(summary.userId));
+    final activeSession = sessionAsync.value;
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -806,7 +811,7 @@ class _WorkerCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(12),
-                boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.25), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Icon(Symbols.assignment_add, color: Colors.white, size: 16),
@@ -816,6 +821,16 @@ class _WorkerCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
+          // ── Live Meeting Location ────────────────────────────────────────
+          if (activeSession != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: _LiveMeetingBadge(
+                leadName: activeSession.leadName,
+                lat: activeSession.lat,
+                lng: activeSession.lng,
+              ),
+            ),
           // Stats row
           Row(children: [
             _statChip(Symbols.leaderboard, '${summary.leads.length} leads', AppColors.primary),
@@ -1646,7 +1661,7 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
                 decoration: BoxDecoration(
                   gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 6))],
+                  boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
                 ),
                 child: ElevatedButton(
                   onPressed: _loading ? null : _assign,
@@ -1695,7 +1710,7 @@ class _AssignTaskSheetState extends ConsumerState<_AssignTaskSheet> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
-          color: isSel ? color.withOpacity(0.12) : AppColors.background,
+          color: isSel ? color.withValues(alpha: 0.12) : AppColors.background,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: isSel ? color : AppColors.border, width: isSel ? 1.5 : 1),
         ),
@@ -1779,7 +1794,7 @@ class _AnnouncementCard extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: item.isPinned ? AppColors.primarySoft : AppColors.border),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 14, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 14, offset: const Offset(0, 4))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
@@ -2001,7 +2016,7 @@ class _PostAnnouncementSheetState extends ConsumerState<_PostAnnouncementSheet> 
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 16, offset: const Offset(0, 6))],
+                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 6))],
               ),
               child: ElevatedButton(
                 onPressed: _loading ? null : _post,
@@ -2039,4 +2054,107 @@ class _PostAnnouncementSheetState extends ConsumerState<_PostAnnouncementSheet> 
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     ),
   );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Live Meeting Badge  (Admin side — shown inside WorkerCard)
+// ─────────────────────────────────────────────────────────────────────────────
+class _LiveMeetingBadge extends StatelessWidget {
+  final String leadName;
+  final double? lat;
+  final double? lng;
+  const _LiveMeetingBadge(
+      {required this.leadName, required this.lat, required this.lng});
+
+  Future<void> _openMap() async {
+    if (lat == null || lng == null) return;
+    final uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    try {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      await launchUrl(uri);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF4CAF7D).withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: const Color(0xFF4CAF7D).withValues(alpha: 0.35)),
+      ),
+      child: Row(children: [
+        // Pulsing dot
+        Container(
+          width: 10,
+          height: 10,
+          decoration: const BoxDecoration(
+            color: Color(0xFF4CAF7D),
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text(
+              '🟢 LIVE — In Meeting',
+              style: TextStyle(
+                color: Color(0xFF4CAF7D),
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Client: $leadName',
+              style: const TextStyle(
+                  color: AppColors.textMid,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500),
+            ),
+          ]),
+        ),
+        // View Location button
+        if (lat != null && lng != null)
+          GestureDetector(
+            onTap: _openMap,
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.location_on, color: Colors.white, size: 13),
+                  SizedBox(width: 5),
+                  Text(
+                    'View Location',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
 }
