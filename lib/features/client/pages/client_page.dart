@@ -72,8 +72,8 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: _showSearch ? AppColors.primarySoft : AppColors.border),
                           boxShadow: [
-                            BoxShadow(color: AppColors.primary.withValues(alpha: _showSearch ? 0.25 : 0.07), blurRadius: 12, offset: const Offset(0, 4)),
-                            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 5, offset: const Offset(0, 2)),
+                            BoxShadow(color: AppColors.primary.withOpacity(_showSearch ? 0.25 : 0.07), blurRadius: 12, offset: const Offset(0, 4)),
+                            BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 5, offset: const Offset(0, 2)),
                           ],
                         ),
                         child: Icon(Icons.search_rounded, color: _showSearch ? Colors.white : AppColors.textDark, size: 20),
@@ -127,7 +127,7 @@ class _ClientPageState extends ConsumerState<ClientPage> {
                               borderRadius: BorderRadius.circular(50),
                               border: isSel ? null : Border.all(color: AppColors.border),
                               boxShadow: isSel
-                                  ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.28), blurRadius: 10, offset: const Offset(0, 4))]
+                                  ? [BoxShadow(color: AppColors.primary.withOpacity(0.28), blurRadius: 10, offset: const Offset(0, 4))]
                                   : [],
                             ),
                             child: Text(_statuses[i], style: TextStyle(color: isSel ? Colors.white : AppColors.textMid, fontSize: 13, fontWeight: isSel ? FontWeight.w700 : FontWeight.w500)),
@@ -188,8 +188,8 @@ class _ClientCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 5)),
-            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
           ],
         ),
         child: Row(children: [
@@ -222,7 +222,7 @@ class _ClientCard extends StatelessWidget {
           // Status badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: statusColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(50)),
+            decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(50)),
             child: Text(client.status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
           ),
         ]),

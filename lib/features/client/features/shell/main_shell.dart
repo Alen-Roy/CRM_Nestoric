@@ -1,5 +1,6 @@
 import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/features/client/components/custome_navigationbar.dart';
+import 'package:crm/features/client/pages/attendance_page.dart';
 import 'package:crm/features/client/pages/client_page.dart';
 import 'package:crm/features/client/pages/home_page.dart';
 import 'package:crm/features/client/pages/leads_page.dart';
@@ -17,7 +18,6 @@ class MainShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(currentTabProvider);
 
-    // Keep system nav bar dark to match the dark bottom nav
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       systemNavigationBarColor:          AppColors.background,
       systemNavigationBarIconBrightness: Brightness.dark,
@@ -31,6 +31,7 @@ class MainShell extends ConsumerWidget {
       ClientPage(),
       TaskPage(),
       ReportPage(),
+      AttendancePage(),   // ← new tab
     ];
 
     return Scaffold(

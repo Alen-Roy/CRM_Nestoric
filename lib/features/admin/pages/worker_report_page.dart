@@ -1,4 +1,7 @@
 import 'package:crm/core/constants/app_colors.dart';
+import 'package:crm/models/meeting_session_model.dart';
+import 'package:crm/viewmodels/meeting_session_viewmodel.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:crm/features/admin/viewmodels/admin_viewmodel.dart';
 import 'package:crm/models/activity_model.dart';
 import 'package:crm/models/lead_model.dart';
@@ -29,7 +32,7 @@ class _WorkerReportPageState extends ConsumerState<WorkerReportPage>
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 3, vsync: this);
+    _tabs = TabController(length: 4, vsync: this);
     _tabs.addListener(() => setState(() {}));
   }
 
@@ -88,6 +91,7 @@ class _WorkerReportPageState extends ConsumerState<WorkerReportPage>
                 Tab(text: 'Leads'),
                 Tab(text: 'Tasks'),
                 Tab(text: 'Activities'),
+                Tab(text: 'Meetings'),
               ],
             ),
           ),
@@ -100,6 +104,7 @@ class _WorkerReportPageState extends ConsumerState<WorkerReportPage>
                 _WorkerLeadsTab(leads: leads),
                 _WorkerTasksTab(tasks: tasks, ref: ref),
                 _WorkerActivitiesTab(activities: activities),
+                _WorkerMeetingsTab(userId: widget.userId),
               ],
             ),
           ),
@@ -773,5 +778,372 @@ class _ActivityTile extends StatelessWidget {
       case ActivityType.proposal: return AppColors.warning;
       case ActivityType.note:     return AppColors.primaryGlow;
     }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Meetings Tab  (full history with location, inside WorkerReportPage)
+// ─────────────────────────────────────────────────────────────────────────────
+class _WorkerMeetingsTab extends ConsumerWidget {
+  final String userId;
+  const _WorkerMeetingsTab({required this.userId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(workerMeetingHistoryProvider(userId));
+
+    return historyAsync.when(
+      loading: () => const Center(
+        child: CircularProgressIndicator(
+            color: AppColors.primary, strokeWidth: 2),
+      ),
+      error: (e, _) => Center(
+        child: Text('Error: $e',
+            style: const TextStyle(color: AppColors.danger)),
+      ),
+      data: (sessions) {
+        if (sessions.isEmpty) {
+          return _MeetingsEmptyState();
+        }
+
+        // Stats summary bar
+        final total = sessions.length;
+        final ended = sessions.where((s) => !s.isActive).toList();
+        final withLoc = sessions.where((s) => s.lat != null).length;
+        final totalMins = ended.fold<int>(0, (acc, s) {
+          if (s.endTime == null) return acc;
+          return acc + s.endTime!.difference(s.startTime).inMinutes;
+        });
+        final avgMins = ended.isEmpty ? 0 : (totalMins / ended.length).round();
+
+        return Column(
+          children: [
+            // ── Stats strip ──────────────────────────────────────────────
+            Container(
+              margin: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _MeetingStat('$total', 'Total'),
+                  _StatDivider(),
+                  _MeetingStat('$withLoc', 'With GPS'),
+                  _StatDivider(),
+                  _MeetingStat('${avgMins}m', 'Avg Duration'),
+                ],
+              ),
+            ),
+
+            // ── List ─────────────────────────────────────────────────────
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+                itemCount: sessions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (_, i) => _MeetingHistoryCard(session: sessions[i]),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MeetingStat extends StatelessWidget {
+  final String value;
+  final String label;
+  const _MeetingStat(this.value, this.label);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      Text(value,
+          style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w800)),
+      const SizedBox(height: 2),
+      Text(label,
+          style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75), fontSize: 11)),
+    ]);
+  }
+}
+
+class _StatDivider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: 1, height: 32, color: Colors.white.withValues(alpha: 0.3));
+  }
+}
+
+class _MeetingsEmptyState extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            color: AppColors.primaryLight,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: const Icon(Icons.handshake_rounded,
+              color: AppColors.primaryGlow, size: 34),
+        ),
+        const SizedBox(height: 16),
+        const Text('No Meetings Yet',
+            style: TextStyle(
+                color: AppColors.textDark,
+                fontSize: 16,
+                fontWeight: FontWeight.w700)),
+        const SizedBox(height: 6),
+        const Text('No meeting check-ins recorded yet.',
+            style: TextStyle(color: AppColors.textMid, fontSize: 13)),
+      ]),
+    );
+  }
+}
+
+// ── Individual meeting card inside WorkerReportPage ───────────────────────────
+class _MeetingHistoryCard extends StatelessWidget {
+  final MeetingSessionModel session;
+  const _MeetingHistoryCard({required this.session});
+
+  static final _dateFmt = DateFormat('d MMM yyyy');
+  static final _timeFmt = DateFormat('hh:mm a');
+
+  Future<void> _openMap() async {
+    if (session.lat == null || session.lng == null) return;
+    final uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=${session.lat},${session.lng}');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLoc = session.lat != null && session.lng != null;
+    final isLive = session.isActive;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isLive
+              ? AppColors.success.withValues(alpha: 0.5)
+              : AppColors.border,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // ── Top row ──────────────────────────────────────────────────────
+        Row(children: [
+          // Live / ended dot
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: isLive ? AppColors.success : AppColors.primaryMid,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(session.leadName,
+                  style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Row(children: [
+                // Source type chip
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: session.sourceType == 'client'
+                        ? AppColors.primarySoft
+                        : AppColors.primaryLight,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    session.sourceType == 'client' ? 'Client' : 'Lead',
+                    style: TextStyle(
+                      color: session.sourceType == 'client'
+                          ? AppColors.primary
+                          : AppColors.primaryGlow,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                if (isLive) ...[
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Text('LIVE',
+                        style: TextStyle(
+                            color: AppColors.success,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800)),
+                  ),
+                ],
+              ]),
+            ]),
+          ),
+          // Duration chip
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              session.durationLabel,
+              style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700),
+            ),
+          ),
+        ]),
+
+        const SizedBox(height: 10),
+        const Divider(height: 1, color: AppColors.divider),
+        const SizedBox(height: 10),
+
+        // ── Time row ─────────────────────────────────────────────────────
+        Row(children: [
+          const Icon(Icons.calendar_today_rounded,
+              size: 12, color: AppColors.textLight),
+          const SizedBox(width: 5),
+          Text(_dateFmt.format(session.startTime),
+              style: const TextStyle(
+                  color: AppColors.textMid, fontSize: 11)),
+          const SizedBox(width: 14),
+          const Icon(Icons.access_time_rounded,
+              size: 12, color: AppColors.textLight),
+          const SizedBox(width: 5),
+          Text(_timeFmt.format(session.startTime),
+              style: const TextStyle(
+                  color: AppColors.textMid, fontSize: 11)),
+          if (!isLive && session.endTime != null) ...[
+            const Text(' → ',
+                style:
+                    TextStyle(color: AppColors.textLight, fontSize: 11)),
+            Text(_timeFmt.format(session.endTime!),
+                style: const TextStyle(
+                    color: AppColors.textMid, fontSize: 11)),
+          ],
+        ]),
+
+        const SizedBox(height: 10),
+
+        // ── Location row ─────────────────────────────────────────────────
+        if (hasLoc)
+          Row(children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(children: [
+                  const Icon(Icons.location_pin,
+                      color: AppColors.primary, size: 13),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${session.lat!.toStringAsFixed(5)}, '
+                    '${session.lng!.toStringAsFixed(5)}',
+                    style: const TextStyle(
+                        color: AppColors.textMid,
+                        fontSize: 10,
+                        fontFamily: 'monospace'),
+                  ),
+                ]),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: _openMap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(10),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Row(children: [
+                  Icon(Icons.map_rounded, color: Colors.white, size: 13),
+                  SizedBox(width: 5),
+                  Text('Open Map',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700)),
+                ]),
+              ),
+            ),
+          ])
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppColors.dangerLight,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Row(children: [
+              Icon(Icons.location_off_rounded,
+                  color: AppColors.danger, size: 13),
+              SizedBox(width: 6),
+              Text('No GPS location recorded',
+                  style: TextStyle(
+                      color: AppColors.danger, fontSize: 11)),
+            ]),
+          ),
+      ]),
+    );
   }
 }

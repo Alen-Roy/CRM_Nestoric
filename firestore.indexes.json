@@ -1,35 +1,59 @@
 {
   "indexes": [
     {
-      "collectionGroup": "activities",
+      "collectionGroup": "meeting_sessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "leadId",    "order": "ASCENDING"  },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "status",    "order": "ASCENDING"  },
+        { "fieldPath": "startTime", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "activities",
+      "collectionGroup": "meeting_sessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "createdBy", "order": "ASCENDING"  },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
       ]
     },
     {
-      "collectionGroup": "leads",
+      "collectionGroup": "meeting_sessions",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId",    "order": "ASCENDING"  },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        { "fieldPath": "startTime", "order": "DESCENDING" }
       ]
     },
     {
-      "collectionGroup": "clients",
+      "collectionGroup": "meeting_sessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId",     "order": "ASCENDING"  },
-        { "fieldPath": "joinedDate", "order": "DESCENDING" }
+        { "fieldPath": "leadId",    "order": "ASCENDING"  },
+        { "fieldPath": "startTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "meeting_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clientId",  "order": "ASCENDING"  },
+        { "fieldPath": "startTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId",      "order": "ASCENDING"  },
+        { "fieldPath": "checkInTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "date",        "order": "ASCENDING" },
+        { "fieldPath": "checkInTime", "order": "ASCENDING" }
       ]
     }
   ],

@@ -187,7 +187,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         color: AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: AppColors.border),
-                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8)],
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
                       ),
                       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                         SizedBox(width: 22, height: 22, child: Image.asset('assets/logo/google.png', errorBuilder: (_, __, ___) => const Icon(Icons.g_mobiledata, size: 22))),
@@ -248,7 +248,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         decoration: BoxDecoration(
           gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.35), blurRadius: 20, offset: const Offset(0, 8))],
+          boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
         ),
         child: ElevatedButton(
           onPressed: isLoading ? null : onPressed,

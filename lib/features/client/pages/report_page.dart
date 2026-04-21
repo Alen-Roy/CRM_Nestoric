@@ -178,7 +178,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(color: AppColors.surface, borderRadius: BorderRadius.circular(10),
-                      boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 10, offset: const Offset(0, 3))]),
+                      boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 10, offset: const Offset(0, 3))]),
                   child: const Icon(Icons.edit_outlined, color: AppColors.textMid, size: 18),
                 ),
               ],
@@ -195,7 +195,7 @@ class _ReportPageState extends ConsumerState<ReportPage> {
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(26),
-                boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 6))],
+                boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 6))],
               border: Border.all(color: AppColors.border),
               ),
               child: Column(
@@ -253,8 +253,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: AppColors.border),
                 boxShadow: [
-                  BoxShadow(color: AppColors.primary.withValues(alpha: 0.08), blurRadius: 16, offset: const Offset(0, 5)),
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                  BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 5)),
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
@@ -352,8 +352,8 @@ class _ReportPageState extends ConsumerState<ReportPage> {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 16, offset: const Offset(0, 5)),
-          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+          BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 16, offset: const Offset(0, 5)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
         ],
       ),
       child: child,
@@ -376,7 +376,7 @@ class _TabRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
         boxShadow: [
-          BoxShadow(color: AppColors.primary.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4)),
+          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 12, offset: const Offset(0, 4)),
         ],
       ),
       child: Row(
@@ -432,8 +432,8 @@ class _KpiRow extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
           boxShadow: [
-            BoxShadow(color: AppColors.primary.withValues(alpha: 0.07), blurRadius: 12, offset: const Offset(0, 4)),
-            BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 5, offset: const Offset(0, 2)),
+            BoxShadow(color: AppColors.primary.withOpacity(0.07), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
           ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -441,7 +441,7 @@ class _KpiRow extends StatelessWidget {
           const SizedBox(height: 6),
           Text(value, style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 6),
-          Container(height: 3, decoration: BoxDecoration(color: color.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(2)),
+          Container(height: 3, decoration: BoxDecoration(color: color.withOpacity(0.2), borderRadius: BorderRadius.circular(2)),
               child: FractionallySizedBox(widthFactor: 0.6, child: Container(decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2))))),
         ]),
       ),
@@ -475,9 +475,9 @@ class _RevenueBarChart extends StatelessWidget {
               getTitlesWidget: (value, _) {
                 if (value == 0) return const SizedBox();
                 String label;
-                if (value >= 100000) { label = '₹${(value / 100000).toStringAsFixed(0)}L'; }
-                else if (value >= 1000) { label = '₹${(value / 1000).toStringAsFixed(0)}k'; }
-                else { label = '₹${value.toInt()}'; }
+                if (value >= 100000) label = '₹${(value / 100000).toStringAsFixed(0)}L';
+                else if (value >= 1000) label = '₹${(value / 1000).toStringAsFixed(0)}k';
+                else label = '₹${value.toInt()}';
                 return Text(label, style: const TextStyle(color: AppColors.textLight, fontSize: 9));
               },
             ),
@@ -525,9 +525,9 @@ class _RevenueBarChart extends StatelessWidget {
               final v = rod.toY;
               if (v == 0) return null;
               String label;
-              if (v >= 100000) { label = '₹${(v / 100000).toStringAsFixed(1)}L'; }
-              else if (v >= 1000) { label = '₹${(v / 1000).toStringAsFixed(1)}k'; }
-              else { label = '₹${v.toStringAsFixed(0)}'; }
+              if (v >= 100000) label = '₹${(v / 100000).toStringAsFixed(1)}L';
+              else if (v >= 1000) label = '₹${(v / 1000).toStringAsFixed(1)}k';
+              else label = '₹${v.toStringAsFixed(0)}';
               return BarTooltipItem(label,
                   const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w700, fontSize: 12));
             },
@@ -659,7 +659,7 @@ class _ActivityBreakdown extends StatelessWidget {
             children: [
               Container(
                 width: 30, height: 30,
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
                 child: Icon(emoji, color: color, size: 16),
               ),
               const SizedBox(width: 8),

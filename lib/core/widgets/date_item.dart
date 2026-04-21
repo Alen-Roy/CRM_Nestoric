@@ -30,8 +30,8 @@ class DateItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: isSelected ? null : Border.all(color: AppColors.border),
           boxShadow: isSelected
-              ? [BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]
-              : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 6)],
+              ? [BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 4))]
+              : [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)],
         ),
         child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Text(

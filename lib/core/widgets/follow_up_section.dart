@@ -29,7 +29,7 @@ class FollowUpSection extends ConsumerWidget {
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(color: headerColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: headerColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
               child: Text('${items.length}', style: TextStyle(color: headerColor, fontSize: 11, fontWeight: FontWeight.w800)),
             ),
             const Spacer(),
@@ -72,12 +72,12 @@ class _FollowUpCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: _cardBg, borderRadius: BorderRadius.circular(20),
           border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Row(children: [
           Container(
             width: 46, height: 46,
-            decoration: BoxDecoration(color: _urgencyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(color: _urgencyColor.withOpacity(0.1), borderRadius: BorderRadius.circular(14)),
             child: Center(child: Text(initials, style: TextStyle(color: _urgencyColor, fontWeight: FontWeight.w800, fontSize: 15))),
           ),
           const SizedBox(width: 14),
@@ -95,7 +95,7 @@ class _FollowUpCard extends StatelessWidget {
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(color: _urgencyColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: _urgencyColor.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
               child: Text(item.urgency == FollowUpUrgency.overdue ? 'Overdue' : 'Due soon',
                   style: TextStyle(color: _urgencyColor, fontSize: 10, fontWeight: FontWeight.w700)),
             ),
@@ -124,7 +124,7 @@ class _StagePill extends StatelessWidget {
     final c = _color();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(color: c.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
       child: Text(stage, style: TextStyle(color: c, fontSize: 10, fontWeight: FontWeight.w700)),
     );
   }
