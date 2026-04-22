@@ -18,7 +18,6 @@ class CustomBottomNavBar extends StatelessWidget {
     _NavItem(icon: Symbols.person,          label: 'Clients'),
     _NavItem(icon: Symbols.task_alt,        label: 'Tasks'),
     _NavItem(icon: Symbols.description,     label: 'Reports'),
-    _NavItem(icon: Symbols.how_to_reg,      label: 'Attendance'),
   ];
 
   @override

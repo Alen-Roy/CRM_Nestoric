@@ -21,7 +21,8 @@ class AttendanceRepository {
     });
   }
 
-  // ── Employee: today's record (null = not yet checked in) ─────────────────
+  // ── Employee: today's record ──────────────────────────────────────────────
+  // Two single-field where clauses — no composite index needed.
   Future<AttendanceModel?> getTodayRecord(String userId) async {
     final today = AttendanceModel.todayKey();
     final snap = await _col
@@ -33,42 +34,45 @@ class AttendanceRepository {
     return AttendanceModel.fromMap(snap.docs.first.data(), snap.docs.first.id);
   }
 
-  // ── Employee: full attendance history (stream) ────────────────────────────
+  // ── Employee: full history — single where, sort in Dart ───────────────────
   Stream<List<AttendanceModel>> watchMyAttendance(String userId) {
     return _col
-        .where('userId', isEqualTo: userId)
-        .orderBy('checkInTime', descending: true)
+        .where('userId', isEqualTo: userId)   // single where → no composite index
         .limit(60)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) => AttendanceModel.fromMap(d.data(), d.id))
-            .toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) => AttendanceModel.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.checkInTime.compareTo(a.checkInTime)); // newest first
+          return list;
+        });
   }
 
-  // ── Admin: all employees today ────────────────────────────────────────────
+  // ── Admin: all records for a date — single where, sort in Dart ───────────
   Stream<List<AttendanceModel>> watchTodayAll() {
     final today = AttendanceModel.todayKey();
-    return _col
-        .where('date', isEqualTo: today)
-        .orderBy('checkInTime', descending: false)
-        .snapshots()
-        .map((s) => s.docs
-            .map((d) => AttendanceModel.fromMap(d.data(), d.id))
-            .toList());
+    return _watchByDate(today);
   }
 
-  // ── Admin: attendance for any date ───────────────────────────────────────
   Stream<List<AttendanceModel>> watchDateAttendance(String dateKey) {
-    return _col
-        .where('date', isEqualTo: dateKey)
-        .orderBy('checkInTime', descending: false)
-        .snapshots()
-        .map((s) => s.docs
-            .map((d) => AttendanceModel.fromMap(d.data(), d.id))
-            .toList());
+    return _watchByDate(dateKey);
   }
 
-  // ── Admin: all attendance records (last 200, for history view) ───────────
+  Stream<List<AttendanceModel>> _watchByDate(String dateKey) {
+    return _col
+        .where('date', isEqualTo: dateKey)    // single where → no composite index
+        .snapshots()
+        .map((s) {
+          final list = s.docs
+              .map((d) => AttendanceModel.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => a.checkInTime.compareTo(b.checkInTime)); // earliest first
+          return list;
+        });
+  }
+
+  // ── Admin: all records (no where clause — single-field orderBy is fine) ──
   Stream<List<AttendanceModel>> watchAllAttendance() {
     return _col
         .orderBy('checkInTime', descending: true)
@@ -79,15 +83,18 @@ class AttendanceRepository {
             .toList());
   }
 
-  // ── Admin: one employee's history ─────────────────────────────────────────
+  // ── Admin: one employee's history — single where, sort in Dart ───────────
   Stream<List<AttendanceModel>> watchEmployeeHistory(String userId) {
     return _col
-        .where('userId', isEqualTo: userId)
-        .orderBy('checkInTime', descending: true)
+        .where('userId', isEqualTo: userId)   // single where → no composite index
         .limit(60)
         .snapshots()
-        .map((s) => s.docs
-            .map((d) => AttendanceModel.fromMap(d.data(), d.id))
-            .toList());
+        .map((s) {
+          final list = s.docs
+              .map((d) => AttendanceModel.fromMap(d.data(), d.id))
+              .toList();
+          list.sort((a, b) => b.checkInTime.compareTo(a.checkInTime)); // newest first
+          return list;
+        });
   }
 }

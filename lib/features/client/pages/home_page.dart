@@ -22,8 +22,12 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:crm/features/client/components/recent_activities_section.dart'
     show RecentActivity;
-import 'package:crm/features/client/pages/global_search_page.dart';
-import 'package:intl/intl.dart';
+import 'package:crm/features/client/pages/attendance_page.dart';
+import 'package:crm/features/client/pages/notifications_page.dart';
+import 'package:crm/features/client/pages/settings_page.dart';
+import 'package:crm/models/attendance_model.dart';
+import 'package:crm/viewmodels/attendance_viewmodel.dart';
+import 'package:crm/features/client/pages/global_search_page.dart';import 'package:intl/intl.dart';
 
 // ── Data classes ──────────────────────────────────────────────────────────────
 class GridItem {
@@ -223,9 +227,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                   const SizedBox(width: 8),
+                  _NotificationBell(),
+                  const SizedBox(width: 8),
                   _iconBtn(
-                    Symbols.logout,
-                    () => ref.read(authProvider.notifier).logout(),
+                    Symbols.settings,
+                    () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SettingsPage()),
+                    ),
                   ),
                 ],
               ),
@@ -256,6 +265,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const _StatPillsRow(tasks: 0, newLeads: 0, dealsWon: 0),
                 error: (_, __) => const SizedBox.shrink(),
               ),
+              const SizedBox(height: 24),
+
+              // ── Attendance card ───────────────────────────────────────────
+              _AttendanceCard(onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AttendancePage()),
+              )),
               const SizedBox(height: 24),
 
               // ── Revenue card ──────────────────────────────────────────────
@@ -426,6 +442,60 @@ class _HomePageState extends ConsumerState<HomePage> {
         ),
         child: Icon(icon, color: AppColors.textDark, size: 19),
       ),
+    );
+  }
+}
+
+// ── Notification bell with unread dot ────────────────────────────────────────
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final announcementsAsync = ref.watch(announcementsStreamProvider);
+    final hasUnread = announcementsAsync.maybeWhen(
+      data: (list) => list.isNotEmpty,
+      orElse: () => false,
+    );
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const NotificationsPage()),
+      ),
+      child: Stack(clipBehavior: Clip.none, children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.border),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withOpacity(0.07),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: const Icon(Symbols.notifications,
+              color: AppColors.textDark, size: 19),
+        ),
+        if (hasUnread)
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: AppColors.danger,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+      ]),
     );
   }
 }
@@ -1119,6 +1189,190 @@ class _RecentActivitiesCard extends StatelessWidget {
     );
   }
 }
+
+// ── Attendance Card ───────────────────────────────────────────────────────────
+class _AttendanceCard extends ConsumerWidget {
+  final VoidCallback onTap;
+  const _AttendanceCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final attendanceAsync = ref.watch(myAttendanceProvider);
+
+    return attendanceAsync.when(
+      loading: () => _buildCard(context, status: _AttendanceStatus.loading),
+      error: (_, __) => _buildCard(context, status: _AttendanceStatus.unknown),
+      data: (records) {
+        final todayKey = AttendanceModel.todayKey();
+        AttendanceModel? todayRecord;
+        try {
+          todayRecord = records.firstWhere((r) => r.date == todayKey);
+        } catch (_) {
+          todayRecord = null;
+        }
+
+        if (todayRecord == null) {
+          return _buildCard(context, status: _AttendanceStatus.notCheckedIn);
+        } else if (todayRecord.hasCheckedOut) {
+          return _buildCard(context,
+              status: _AttendanceStatus.checkedOut, record: todayRecord);
+        } else {
+          return _buildCard(context,
+              status: _AttendanceStatus.checkedIn, record: todayRecord);
+        }
+      },
+    );
+  }
+
+  Widget _buildCard(BuildContext context,
+      {required _AttendanceStatus status, AttendanceModel? record}) {
+    final fmt = DateFormat('h:mm a');
+
+    final (Color bg, Color accent, IconData icon, String title, String subtitle) =
+        switch (status) {
+      _AttendanceStatus.notCheckedIn => (
+          AppColors.surface,
+          AppColors.primary,
+          Symbols.how_to_reg,
+          'Mark Attendance',
+          'You haven\'t checked in today'
+        ),
+      _AttendanceStatus.checkedIn => (
+          AppColors.surface,
+          AppColors.success,
+          Symbols.login,
+          'Checked In',
+          'Since ${record != null ? fmt.format(record.checkInTime) : '--'}'
+        ),
+      _AttendanceStatus.checkedOut => (
+          AppColors.surface,
+          AppColors.primaryMid,
+          Symbols.logout,
+          'Attendance Done',
+          'Checked out at ${record?.checkOutTime != null ? fmt.format(record!.checkOutTime!) : '--'}'
+        ),
+      _AttendanceStatus.loading => (
+          AppColors.surface,
+          AppColors.primaryLight,
+          Symbols.how_to_reg,
+          'Attendance',
+          'Loading…'
+        ),
+      _AttendanceStatus.unknown => (
+          AppColors.surface,
+          AppColors.primaryLight,
+          Symbols.how_to_reg,
+          'Attendance',
+          'Tap to view'
+        ),
+    };
+
+    final bool showChevron = status != _AttendanceStatus.loading;
+
+    return GestureDetector(
+      onTap: showChevron ? onTap : null,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: accent.withOpacity(0.25)),
+          boxShadow: [
+            BoxShadow(
+              color: accent.withOpacity(0.12),
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Icon bubble
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: accent, size: 24),
+            ),
+            const SizedBox(width: 14),
+            // Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      color: AppColors.textMid,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Status badge + chevron
+            if (status == _AttendanceStatus.checkedIn)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: AppColors.success,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'Active',
+                      style: TextStyle(
+                        color: AppColors.success,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (showChevron)
+              Icon(Icons.chevron_right_rounded,
+                  color: accent.withOpacity(0.5), size: 22),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+enum _AttendanceStatus { notCheckedIn, checkedIn, checkedOut, loading, unknown }
 
 // ── Section header ────────────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {

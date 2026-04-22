@@ -39,22 +39,6 @@
         { "fieldPath": "clientId",  "order": "ASCENDING"  },
         { "fieldPath": "startTime", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "attendance",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "userId",      "order": "ASCENDING"  },
-        { "fieldPath": "checkInTime", "order": "DESCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "attendance",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "date",        "order": "ASCENDING" },
-        { "fieldPath": "checkInTime", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []

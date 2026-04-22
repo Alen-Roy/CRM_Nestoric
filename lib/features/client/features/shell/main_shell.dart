@@ -1,6 +1,5 @@
 import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/features/client/components/custome_navigationbar.dart';
-import 'package:crm/features/client/pages/attendance_page.dart';
 import 'package:crm/features/client/pages/client_page.dart';
 import 'package:crm/features/client/pages/home_page.dart';
 import 'package:crm/features/client/pages/leads_page.dart';
@@ -31,7 +30,6 @@ class MainShell extends ConsumerWidget {
       ClientPage(),
       TaskPage(),
       ReportPage(),
-      AttendancePage(),   // ← new tab
     ];
 
     return Scaffold(
