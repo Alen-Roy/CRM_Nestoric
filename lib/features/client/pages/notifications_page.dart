@@ -20,10 +20,19 @@ final _recentActivitiesNotifProvider =
   return FirebaseFirestore.instance
       .collection('activities')
       .where('createdBy', isEqualTo: user.uid)
-      .orderBy('createdAt', descending: true)
-      .limit(20)
+      // No orderBy here — avoids composite index requirement.
+      // Sorting is done in Dart below.
+      .limit(30)
       .snapshots()
-      .map((snap) => snap.docs.map((doc) {
+      .map((snap) {
+        final sorted = snap.docs.toList()
+          ..sort((a, b) {
+            final aTime = a.data()['createdAt'];
+            final bTime = b.data()['createdAt'];
+            if (aTime == null || bTime == null) return 0;
+            return (bTime as Timestamp).compareTo(aTime as Timestamp);
+          });
+        return sorted.take(20).map((doc) {
             final d = doc.data();
             final type = d['type'] as String? ?? 'note';
             final outcome = d['outcome'] as String?;
@@ -37,7 +46,8 @@ final _recentActivitiesNotifProvider =
                   outcome != null && outcome.isNotEmpty ? '$label: $outcome' : '$label logged',
               time: createdAt,
             );
-          }).toList());
+          }).toList();
+      });
 });
 
 IconData _typeIcon(String t) {

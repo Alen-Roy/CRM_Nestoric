@@ -43,6 +43,7 @@ class AuthNotifier extends Notifier<AuthState> {
     state = AuthState(status: AuthStatus.loading);
     try {
       await _repo.signOut();
+      state = AuthState(status: AuthStatus.initial); // reset so login button is fresh
     } catch (e) {
       state = AuthState(status: AuthStatus.error, errorMessage: e.toString());
     }

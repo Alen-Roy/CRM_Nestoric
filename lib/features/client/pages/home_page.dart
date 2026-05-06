@@ -5,7 +5,6 @@ import 'package:crm/features/client/pages/new_lead_page.dart';
 import 'package:crm/features/client/pages/task_add_page.dart';
 import 'package:crm/models/client_model.dart';
 import 'package:crm/models/task_model.dart';
-import 'package:crm/viewmodels/auth_viewmodel.dart';
 import 'package:crm/viewmodels/client_viewmodel.dart';
 import 'package:crm/viewmodels/home_viewmodel.dart';
 import 'package:crm/viewmodels/leads_viewmodel.dart';
@@ -27,7 +26,8 @@ import 'package:crm/features/client/pages/notifications_page.dart';
 import 'package:crm/features/client/pages/settings_page.dart';
 import 'package:crm/models/attendance_model.dart';
 import 'package:crm/viewmodels/attendance_viewmodel.dart';
-import 'package:crm/features/client/pages/global_search_page.dart';import 'package:intl/intl.dart';
+import 'package:crm/features/client/pages/global_search_page.dart';
+import 'package:intl/intl.dart';
 
 // ── Data classes ──────────────────────────────────────────────────────────────
 class GridItem {
@@ -61,21 +61,30 @@ final adminAssignedTasksProvider = StreamProvider<List<TaskModel>>((ref) {
 });
 
 // ── Announcements from manager ────────────────────────────────────────────────
-final announcementsStreamProvider = StreamProvider<List<AnnouncementModel>>((ref) {
+final announcementsStreamProvider = StreamProvider<List<AnnouncementModel>>((
+  ref,
+) {
   return AnnouncementRepository().stream();
 });
 
 final recentActivitiesProvider = StreamProvider<List<RecentActivity>>((ref) {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return Stream.value([]);
+  // No orderBy here — avoids composite index requirement. Sorted in Dart below.
   return FirebaseFirestore.instance
       .collection('activities')
       .where('createdBy', isEqualTo: user.uid)
-      .orderBy('createdAt', descending: true)
-      .limit(5)
+      .limit(10)
       .snapshots()
-      .map(
-        (snap) => snap.docs.map((doc) {
+      .map((snap) {
+        final docs = snap.docs.toList()
+          ..sort((a, b) {
+            final aT = a.data()['createdAt'];
+            final bT = b.data()['createdAt'];
+            if (aT == null || bT == null) return 0;
+            return (bT as Timestamp).compareTo(aT as Timestamp);
+          });
+        return docs.take(5).map((doc) {
           final d = doc.data();
           final type = d['type'] as String? ?? 'note';
           final outcome = d['outcome'] as String?;
@@ -97,8 +106,8 @@ final recentActivitiesProvider = StreamProvider<List<RecentActivity>>((ref) {
             title: title,
             time: time,
           );
-        }).toList(),
-      );
+        }).toList();
+      });
 });
 
 IconData _typeIcon(String t) {
@@ -268,10 +277,12 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(height: 24),
 
               // ── Attendance card ───────────────────────────────────────────
-              _AttendanceCard(onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AttendancePage()),
-              )),
+              _AttendanceCard(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AttendancePage()),
+                ),
+              ),
               const SizedBox(height: 24),
 
               // ── Revenue card ──────────────────────────────────────────────
@@ -301,9 +312,16 @@ class _HomePageState extends ConsumerState<HomePage> {
               announcementsAsync.when(
                 data: (notices) => notices.isEmpty
                     ? const SizedBox.shrink()
-                    : _ManagerNoticesBanner(notices: notices.where((n) => n.isPinned).isNotEmpty
-                        ? [notices.firstWhere((n) => n.isPinned, orElse: () => notices.first)]
-                        : [notices.first]),
+                    : _ManagerNoticesBanner(
+                        notices: notices.where((n) => n.isPinned).isNotEmpty
+                            ? [
+                                notices.firstWhere(
+                                  (n) => n.isPinned,
+                                  orElse: () => notices.first,
+                                ),
+                              ]
+                            : [notices.first],
+                      ),
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
               ),
@@ -314,10 +332,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                 data: (adminTasks) {
                   final pending = adminTasks.where((t) => !t.isDone).toList();
                   if (pending.isEmpty) return const SizedBox.shrink();
-                  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    _AdminTasksSection(tasks: pending),
-                    const SizedBox(height: 24),
-                  ]);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _AdminTasksSection(tasks: pending),
+                      const SizedBox(height: 24),
+                    ],
+                  );
                 },
                 loading: () => const SizedBox.shrink(),
                 error: (_, __) => const SizedBox.shrink(),
@@ -463,39 +484,45 @@ class _NotificationBell extends ConsumerWidget {
         context,
         MaterialPageRoute(builder: (_) => const NotificationsPage()),
       ),
-      child: Stack(clipBehavior: Clip.none, children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.border),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.07),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Icon(Symbols.notifications,
-              color: AppColors.textDark, size: 19),
-        ),
-        if (hasUnread)
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              width: 8,
-              height: 8,
-              decoration: const BoxDecoration(
-                color: AppColors.danger,
-                shape: BoxShape.circle,
-              ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.07),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Symbols.notifications,
+              color: AppColors.textDark,
+              size: 19,
             ),
           ),
-      ]),
+          if (hasUnread)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -729,7 +756,7 @@ class _PipelineStrip extends StatelessWidget {
     'New': AppColors.primaryGlow,
     'Proposal': AppColors.primaryMid,
     'Negotiation': AppColors.primary,
-    'Won': AppColors.success,
+    'Won': Color.fromARGB(255, 121, 121, 121),
     'Lost': AppColors.danger,
   };
 
@@ -1214,57 +1241,71 @@ class _AttendanceCard extends ConsumerWidget {
         if (todayRecord == null) {
           return _buildCard(context, status: _AttendanceStatus.notCheckedIn);
         } else if (todayRecord.hasCheckedOut) {
-          return _buildCard(context,
-              status: _AttendanceStatus.checkedOut, record: todayRecord);
+          return _buildCard(
+            context,
+            status: _AttendanceStatus.checkedOut,
+            record: todayRecord,
+          );
         } else {
-          return _buildCard(context,
-              status: _AttendanceStatus.checkedIn, record: todayRecord);
+          return _buildCard(
+            context,
+            status: _AttendanceStatus.checkedIn,
+            record: todayRecord,
+          );
         }
       },
     );
   }
 
-  Widget _buildCard(BuildContext context,
-      {required _AttendanceStatus status, AttendanceModel? record}) {
+  Widget _buildCard(
+    BuildContext context, {
+    required _AttendanceStatus status,
+    AttendanceModel? record,
+  }) {
     final fmt = DateFormat('h:mm a');
 
-    final (Color bg, Color accent, IconData icon, String title, String subtitle) =
-        switch (status) {
+    final (
+      Color bg,
+      Color accent,
+      IconData icon,
+      String title,
+      String subtitle,
+    ) = switch (status) {
       _AttendanceStatus.notCheckedIn => (
-          AppColors.surface,
-          AppColors.primary,
-          Symbols.how_to_reg,
-          'Mark Attendance',
-          'You haven\'t checked in today'
-        ),
+        AppColors.surface,
+        AppColors.primary,
+        Symbols.how_to_reg,
+        'Mark Attendance',
+        'You haven\'t checked in today',
+      ),
       _AttendanceStatus.checkedIn => (
-          AppColors.surface,
-          AppColors.success,
-          Symbols.login,
-          'Checked In',
-          'Since ${record != null ? fmt.format(record.checkInTime) : '--'}'
-        ),
+        AppColors.surface,
+        AppColors.success,
+        Symbols.login,
+        'Checked In',
+        'Since ${record != null ? fmt.format(record.checkInTime) : '--'}',
+      ),
       _AttendanceStatus.checkedOut => (
-          AppColors.surface,
-          AppColors.primaryMid,
-          Symbols.logout,
-          'Attendance Done',
-          'Checked out at ${record?.checkOutTime != null ? fmt.format(record!.checkOutTime!) : '--'}'
-        ),
+        AppColors.surface,
+        AppColors.primaryMid,
+        Symbols.logout,
+        'Attendance Done',
+        'Checked out at ${record?.checkOutTime != null ? fmt.format(record!.checkOutTime!) : '--'}',
+      ),
       _AttendanceStatus.loading => (
-          AppColors.surface,
-          AppColors.primaryLight,
-          Symbols.how_to_reg,
-          'Attendance',
-          'Loading…'
-        ),
+        AppColors.surface,
+        AppColors.primaryLight,
+        Symbols.how_to_reg,
+        'Attendance',
+        'Loading…',
+      ),
       _AttendanceStatus.unknown => (
-          AppColors.surface,
-          AppColors.primaryLight,
-          Symbols.how_to_reg,
-          'Attendance',
-          'Tap to view'
-        ),
+        AppColors.surface,
+        AppColors.primaryLight,
+        Symbols.how_to_reg,
+        'Attendance',
+        'Tap to view',
+      ),
     };
 
     final bool showChevron = status != _AttendanceStatus.loading;
@@ -1333,8 +1374,10 @@ class _AttendanceCard extends ConsumerWidget {
             if (status == _AttendanceStatus.checkedIn)
               Container(
                 margin: const EdgeInsets.only(right: 8),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.success.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -1363,8 +1406,11 @@ class _AttendanceCard extends ConsumerWidget {
                 ),
               ),
             if (showChevron)
-              Icon(Icons.chevron_right_rounded,
-                  color: accent.withOpacity(0.5), size: 22),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: accent.withOpacity(0.5),
+                size: 22,
+              ),
           ],
         ),
       ),
@@ -1609,35 +1655,94 @@ class _ManagerNoticesBannerState extends State<_ManagerNoticesBanner> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.primary, AppColors.primaryGlow],
-          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.30), blurRadius: 16, offset: const Offset(0, 6))],
-      ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          width: 38, height: 38,
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
-          child: const Icon(Icons.campaign_outlined, color: Colors.white, size: 20),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Manager Notice', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
-          const SizedBox(height: 3),
-          Text(notice.title, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w800), maxLines: 1, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 4),
-          Text(notice.body, style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 12, height: 1.4), maxLines: 2, overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 6),
-          Text('— ${notice.adminName}', style: TextStyle(color: Colors.white.withOpacity(0.65), fontSize: 11)),
-        ])),
-        GestureDetector(
-          onTap: () => setState(() => _dismissed = true),
-          child: Container(
-            padding: const EdgeInsets.all(4),
-            child: Icon(Icons.close_rounded, color: Colors.white.withOpacity(0.7), size: 16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.30),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-        ),
-      ]),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              Icons.campaign_outlined,
+              color: Colors.white,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Manager Notice',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  notice.title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  notice.body,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  '— ${notice.adminName}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.65),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () => setState(() => _dismissed = true),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              child: Icon(
+                Icons.close_rounded,
+                color: Colors.white.withOpacity(0.7),
+                size: 16,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1659,73 +1764,180 @@ class _AdminTasksSection extends ConsumerWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.primarySoft),
-        boxShadow: [BoxShadow(color: AppColors.primary.withOpacity(0.08), blurRadius: 16, offset: const Offset(0, 5))],
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(20)),
-            child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.assignment_outlined, color: Colors.white, size: 13),
-              SizedBox(width: 5),
-              Text('Assigned by Manager', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-            ]),
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(20)),
-            child: Text('${tasks.length}', style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w800)),
-          ),
-        ]),
-        const SizedBox(height: 16),
-        ...shown.map((task) {
-          final priColor = task.priority == 'High'
-              ? AppColors.danger
-              : task.priority == 'Low' ? AppColors.primary : AppColors.warning;
-          final isOverdue = task.scheduledAt.isBefore(DateTime.now()) && !task.isDone;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: isOverdue ? AppColors.danger.withOpacity(0.3) : AppColors.border),
-              ),
-              child: Row(children: [
-                Container(
-                  width: 8, height: 8,
-                  decoration: BoxDecoration(color: priColor, shape: BoxShape.circle),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
                 ),
-                const SizedBox(width: 10),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(task.title, style: const TextStyle(color: AppColors.textDark, fontSize: 13, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  if (task.adminNote?.isNotEmpty == true)
-                    Text(task.adminNote!, style: const TextStyle(color: AppColors.textMid, fontSize: 11), maxLines: 1, overflow: TextOverflow.ellipsis),
-                ])),
-                const SizedBox(width: 8),
-                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  Text(
-                    DateFormat('d MMM').format(task.scheduledAt),
-                    style: TextStyle(color: isOverdue ? AppColors.danger : AppColors.textLight, fontSize: 11, fontWeight: FontWeight.w600),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.assignment_outlined,
+                      color: Colors.white,
+                      size: 13,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Assigned by Manager',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLight,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${tasks.length}',
+                  style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
                   ),
-                  const SizedBox(height: 2),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(color: priColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                    child: Text(task.priority, style: TextStyle(color: priColor, fontSize: 9, fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...shown.map((task) {
+            final priColor = task.priority == 'High'
+                ? AppColors.danger
+                : task.priority == 'Low'
+                ? AppColors.primary
+                : AppColors.warning;
+            final isOverdue =
+                task.scheduledAt.isBefore(DateTime.now()) && !task.isDone;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isOverdue
+                        ? AppColors.danger.withOpacity(0.3)
+                        : AppColors.border,
                   ),
-                ]),
-              ]),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: priColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            task.title,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (task.adminNote?.isNotEmpty == true)
+                            Text(
+                              task.adminNote!,
+                              style: const TextStyle(
+                                color: AppColors.textMid,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          DateFormat('d MMM').format(task.scheduledAt),
+                          style: TextStyle(
+                            color: isOverdue
+                                ? AppColors.danger
+                                : AppColors.textLight,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: priColor.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            task.priority,
+                            style: TextStyle(
+                              color: priColor,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+          if (extra > 0)
+            Center(
+              child: Text(
+                '+ $extra more task${extra > 1 ? 's' : ''}',
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-          );
-        }),
-        if (extra > 0)
-          Center(child: Text('+ $extra more task${extra > 1 ? 's' : ''}', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700))),
-      ]),
+        ],
+      ),
     );
   }
 }

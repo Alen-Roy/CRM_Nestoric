@@ -11,7 +11,7 @@ class SearchResult {
   final SearchResultType type;
   final String title;
   final String subtitle;
-  final String? badge; // stage / status / priority
+  final String? badge;
   final Object data;
 
   const SearchResult({
@@ -108,7 +108,7 @@ final searchResultsProvider = Provider<SearchResults>((ref) {
   // ── Tasks ─────────────────────────────────────────────────────────────────
   final taskResults = <SearchResult>[];
   for (final t in tasksAsync.value ?? []) {
-    if (t.isDone) continue; // hide completed tasks from search
+    if (t.isDone) continue;
     final match = _contains(query, [t.title, t.notes, t.priority]);
     if (match) {
       final d = t.scheduledAt;

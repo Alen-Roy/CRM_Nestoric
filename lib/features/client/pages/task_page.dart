@@ -127,7 +127,33 @@ class _TaskPageState extends ConsumerState<TaskPage> {
                             fontWeight: FontWeight.w800,
                             letterSpacing: -0.5)),
                     const Spacer(),
-                    _iconBtn(Icons.calendar_today_outlined, () {}),
+                    _iconBtn(Icons.calendar_today_outlined, () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: _dates[_selectedIndex],
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                        builder: (ctx, child) => Theme(
+                          data: Theme.of(ctx).copyWith(
+                            colorScheme: const ColorScheme.light(
+                              primary: AppColors.primary,
+                              onPrimary: Colors.white,
+                              surface: AppColors.surface,
+                              onSurface: AppColors.textDark,
+                            ),
+                            dialogBackgroundColor: AppColors.surface,
+                          ),
+                          child: child!,
+                        ),
+                      );
+                      if (picked != null) {
+                        final idx = _dates.indexWhere((d) =>
+                            d.year == picked.year &&
+                            d.month == picked.month &&
+                            d.day == picked.day);
+                        if (idx >= 0) setState(() => _selectedIndex = idx);
+                      }
+                    }),
                     const SizedBox(width: 8),
                     GestureDetector(
                       onTap: () => Navigator.push(

@@ -193,38 +193,66 @@ class _ClientCard extends StatelessWidget {
           ],
         ),
         child: Row(children: [
-          // Avatar with status ring
+          // Avatar — square rounded, matches Lead card style
           Container(
-            padding: const EdgeInsets.all(2),
+            width: 50, height: 50,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: statusColor, width: 2),
+              color: AppColors.primaryLight,
+              borderRadius: BorderRadius.circular(16),
             ),
-            child: CircleAvatar(
-              radius: 22,
-              backgroundColor: AppColors.primaryLight,
-              child: Text(client.name[0].toUpperCase(), style: const TextStyle(color: AppColors.primary, fontSize: 16, fontWeight: FontWeight.w800)),
-            ),
+            child: Center(child: Text(client.name[0].toUpperCase(),
+                style: const TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800))),
           ),
           const SizedBox(width: 14),
           // Info
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(client.name, style: const TextStyle(color: AppColors.textDark, fontSize: 15, fontWeight: FontWeight.w700)),
-            if (client.companyName != null)
-              Text(client.companyName!, style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
-            const SizedBox(height: 4),
-            if (client.monthlyValue != null)
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(client.name,
+                  style: const TextStyle(
+                      color: AppColors.textDark,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(client.companyName ?? client.phone,
+                  style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
+              const SizedBox(height: 6),
               Row(children: [
-                const Icon(Symbols.currency_rupee, color: AppColors.primary, size: 13),
-                Text('${client.monthlyValue!.toStringAsFixed(0)}/mo', style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w600)),
+                const Icon(Symbols.call, color: AppColors.textLight, size: 12),
+                const SizedBox(width: 4),
+                Text(client.phone,
+                    style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+                if (client.monthlyValue != null) ...[
+                  const SizedBox(width: 10),
+                  const Icon(Symbols.currency_rupee, color: AppColors.textLight, size: 12),
+                  Text('${client.monthlyValue!.toStringAsFixed(0)}/mo',
+                      style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+                ],
               ]),
-          ])),
-          // Status badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: statusColor.withOpacity(0.1), borderRadius: BorderRadius.circular(50)),
-            child: Text(client.status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
+            ]),
           ),
+          // Status badge + monthly value
+          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(50)),
+              child: Text(client.status,
+                  style: TextStyle(
+                      color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
+            ),
+            if (client.monthlyValue != null) ...[
+              const SizedBox(height: 6),
+              Text('₹${client.monthlyValue!.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                      color: AppColors.primary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700)),
+            ],
+          ]),
         ]),
       ),
     );

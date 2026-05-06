@@ -12,24 +12,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-// ── Result types ──────────────────────────────────────────────────────────────
-sealed class _SearchResult {}
-
-class _LeadResult extends _SearchResult {
-  final LeadModel lead;
-  _LeadResult(this.lead);
-}
-
-class _ClientResult extends _SearchResult {
-  final ClientModel client;
-  _ClientResult(this.client);
-}
-
-class _TaskResult extends _SearchResult {
-  final TaskModel task;
-  _TaskResult(this.task);
-}
-
 // ── Search logic ──────────────────────────────────────────────────────────────
 class _SearchResults {
   final List<LeadModel>   leads;

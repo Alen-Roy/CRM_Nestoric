@@ -31,14 +31,57 @@ void main() async {
   runApp(const ProviderScope(child: MainApp()));
 }
 
+/// Global navigator key — lets us navigate from anywhere (e.g. after logout)
+/// without needing a BuildContext from inside the tree.
+final navigatorKey = GlobalKey<NavigatorState>();
+
 class MainApp extends ConsumerWidget {
   const MainApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // ── Logout detection ──────────────────────────────────────────────────────
+    // Watch the profile stream. When it transitions from a logged-in user
+    // to null (sign-out), imperatively clear the ENTIRE navigator stack and
+    // push LoginPage. This handles routes pushed on top of home: (e.g.
+    // SettingsPage) that home: swapping alone cannot remove.
+    ref.listen<AsyncValue<dynamic>>(currentUserProfileProvider, (prev, next) {
+      // Had a logged-in user before, now null → signed out
+      final hadUser = prev?.when(
+        data:    (u) => u != null,
+        loading: ()  => false,
+        error:   (_, __) => false,
+      ) ?? false;
+      final hasUser = next.when(
+        data:    (u) => u != null,
+        loading: ()  => false,
+        error:   (_, __) => false,
+      );
+
+      if (hadUser && !hasUser) {
+        // ── Sign-out: clear stack → LoginPage ────────────────────────────────
+        navigatorKey.currentState?.pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (_) => false,
+        );
+      } else if (!hadUser && hasUser) {
+        // ── Sign-in: clear stack → correct dashboard ──────────────────────────
+        next.whenData((profile) {
+          final destination = (profile?.isAdmin == true)
+              ? const AdminDashboardPage()
+              : const MainShell();
+          navigatorKey.currentState?.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => destination),
+            (_) => false,
+          );
+        });
+      }
+    });
+
     return MaterialApp(
-      title:                    'Nexify CRM',
-      theme:                    AppTheme.light,
+      navigatorKey:               navigatorKey,
+      title:                      'Nexify CRM',
+      theme:                      AppTheme.light,
       debugShowCheckedModeBanner: false,
       home: ref.watch(currentUserProfileProvider).when(
         // Loading — show premium splash

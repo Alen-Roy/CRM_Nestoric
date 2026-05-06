@@ -9,10 +9,43 @@ import 'package:crm/viewmodels/lead_detail_viewmodel.dart';
 import 'package:crm/viewmodels/meeting_session_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+// ── Global launcher helper ────────────────────────────────────────────────────
+Future<void> _launchContactUrl(BuildContext context, String url) async {
+  final uri = Uri.parse(url);
+  // Use platformDefault: tel/sms/mailto are handled by the OS dialler/SMS/mail app
+  // externalApplication is for browser URLs only.
+  final mode = (uri.scheme == 'https' || uri.scheme == 'http')
+      ? LaunchMode.externalApplication
+      : LaunchMode.platformDefault;
+  try {
+    final launched = await launchUrl(uri, mode: mode);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No app found to open: ${uri.scheme}'),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open: $url'),
+          backgroundColor: AppColors.danger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+}
 
 class LeadDetailPage extends ConsumerStatefulWidget {
   final LeadModel lead;
@@ -291,13 +324,14 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
                             if (_lead.companyName != null)
                               Text(_lead.companyName!, style: TextStyle(color: AppColors.textMid, fontSize: 13)),
                           ])),
-                          Column(children: [
-                            _contactCircle(Symbols.call, AppColors.textDark),
-                            const SizedBox(height: 8),
-                            _contactCircle(Symbols.mail, AppColors.textDark),
-                          ]),
                         ]),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 10),
+                        // ── Quick contact action row ────────────────────────
+                        _QuickContactBar(
+                          phone: _lead.phone,
+                          email: _lead.email,
+                        ),
+                        const SizedBox(height: 10),
                         Row(children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
@@ -370,8 +404,54 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
                 _infoRow(Symbols.business, _lead.companyName ?? '—', 'Company Name'),
                 _infoRow(Symbols.person, _lead.contactPerson ?? '—', 'Contact Person'),
                 _infoRow(Symbols.location_city, _lead.city ?? '—', 'City'),
-                _infoRow(Symbols.call, _lead.phone, 'Phone'),
-                _infoRow(Symbols.mail, _lead.email ?? '—', 'Email'),
+                _tappableInfoRow(
+                  icon: Symbols.call,
+                  value: _lead.phone,
+                  label: 'Phone',
+                  onTap: _lead.phone.isNotEmpty
+                      ? () => _launchContactUrl(context, 'tel:${_lead.phone}')
+                      : null,
+                  valueColor: _lead.phone.isNotEmpty ? AppColors.primary : null,
+                  trailing: _lead.phone.isNotEmpty
+                      ? Row(mainAxisSize: MainAxisSize.min, children: [
+                          _miniAction(
+                            icon: Symbols.call,
+                            color: AppColors.primary,
+                            tooltip: 'Call',
+                            onTap: () => _launchContactUrl(context, 'tel:${_lead.phone}'),
+                          ),
+                          const SizedBox(width: 6),
+                          _miniAction(
+                            icon: Icons.message_rounded,
+                            color: AppColors.primaryGlow,
+                            tooltip: 'WhatsApp',
+                            onTap: () => _launchContactUrl(
+                              context,
+                              'https://wa.me/${_lead.phone.replaceAll(RegExp(r'[^\d+]'), '')}',
+                            ),
+                          ),
+                        ])
+                      : null,
+                ),
+                _tappableInfoRow(
+                  icon: Symbols.mail,
+                  value: _lead.email ?? '—',
+                  label: 'Email',
+                  onTap: (_lead.email != null && _lead.email!.isNotEmpty)
+                      ? () => _launchContactUrl(context, 'mailto:${_lead.email}')
+                      : null,
+                  valueColor: (_lead.email != null && _lead.email!.isNotEmpty)
+                      ? AppColors.primaryMid
+                      : null,
+                  trailing: (_lead.email != null && _lead.email!.isNotEmpty)
+                      ? _miniAction(
+                          icon: Symbols.mail,
+                          color: AppColors.primaryMid,
+                          tooltip: 'Send Email',
+                          onTap: () => _launchContactUrl(context, 'mailto:${_lead.email}'),
+                        )
+                      : null,
+                ),
               ]),
             ),
 
@@ -456,14 +536,87 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
     );
   }
 
-  Widget _contactCircle(IconData icon, Color color) {
-    return Container(
-      width: 38, height: 38,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.18),
-        borderRadius: BorderRadius.circular(12),
+  // ── Tappable info row (extends _infoRow with tap + optional trailing widget) ─
+  Widget _tappableInfoRow({
+    required IconData icon,
+    required String value,
+    required String label,
+    VoidCallback? onTap,
+    Color? valueColor,
+    Widget? trailing,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      onLongPress: onTap != null
+          ? () {
+              Clipboard.setData(ClipboardData(text: value));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('$label copied'),
+                  behavior: SnackBarBehavior.floating,
+                  duration: const Duration(seconds: 1),
+                ),
+              );
+            }
+          : null,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+        child: Row(children: [
+          Container(
+            width: 34, height: 34,
+            decoration: BoxDecoration(
+              color: onTap != null ? AppColors.primaryLight : AppColors.background,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, color: onTap != null ? AppColors.primary : AppColors.textLight, size: 17),
+          ),
+          const SizedBox(width: 14),
+          Flexible(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label, style: const TextStyle(color: AppColors.textLight, fontSize: 11, fontWeight: FontWeight.w500)),
+              const SizedBox(height: 2),
+              Text(value,
+                  style: TextStyle(
+                    color: valueColor ?? AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    decoration: onTap != null ? TextDecoration.underline : null,
+                    decorationColor: valueColor ?? AppColors.textDark,
+                  ),
+                  maxLines: 2, overflow: TextOverflow.ellipsis),
+            ]),
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: 8),
+            trailing,
+          ],
+        ]),
       ),
-      child: Icon(icon, color: color, size: 18),
+    );
+  }
+
+  // Small circular action button used inside info rows
+  Widget _miniAction({
+    required IconData icon,
+    required Color color,
+    required String tooltip,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 32, height: 32,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
+          ),
+          child: Icon(icon, color: color, size: 16),
+        ),
+      ),
     );
   }
 
@@ -478,10 +631,6 @@ class _LeadDetailPageState extends ConsumerState<LeadDetailPage> {
     );
   }
 
-  // Single info row — used inside _infoGroup
-  Widget _infoCard(IconData icon, String value, String label, {Color? valueColor}) {
-    return _infoRow(icon, value, label, valueColor: valueColor);
-  }
 
   Widget _infoRow(IconData icon, String value, String label, {Color? valueColor}) {
     return Padding(
@@ -839,7 +988,7 @@ class _LeadLogActivitySheetState extends State<_LeadLogActivitySheet> {
                   child: const Text(
                     'Save Activity',
                     style: TextStyle(
-                      color: AppColors.textDark,
+                      color: Colors.white,
                       fontWeight: FontWeight.w700,
                       fontSize: 15,
                     ),
@@ -1434,4 +1583,110 @@ class _LeadHistoryTile extends StatelessWidget {
       ),
     );
   }
+}
+
+// ── Quick Contact Action Bar ───────────────────────────────────────────────────
+/// Shown inside the lead detail header — launches native apps for each action.
+class _QuickContactBar extends StatelessWidget {
+  final String phone;
+  final String? email;
+  const _QuickContactBar({required this.phone, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final hasPhone = cleanPhone.isNotEmpty;
+    final hasEmail = email != null && email!.isNotEmpty;
+
+    final actions = <_QuickAction>[
+      _QuickAction(
+        icon: Symbols.call,
+        label: 'Call',
+        color: AppColors.primary,
+        enabled: hasPhone,
+        onTap: hasPhone ? () => _launchContactUrl(context, 'tel:$cleanPhone') : null,
+      ),
+      _QuickAction(
+        icon: Icons.message_rounded,
+        label: 'WhatsApp',
+        color: AppColors.primaryGlow,
+        enabled: hasPhone,
+        onTap: hasPhone
+            ? () => _launchContactUrl(context, 'https://wa.me/$cleanPhone')
+            : null,
+      ),
+      _QuickAction(
+        icon: Symbols.mail,
+        label: 'Email',
+        color: AppColors.primaryMid,
+        enabled: hasEmail,
+        onTap: hasEmail
+            ? () => _launchContactUrl(context, 'mailto:$email')
+            : null,
+      ),
+      _QuickAction(
+        icon: Icons.sms_rounded,
+        label: 'SMS',
+        color: AppColors.primarySoft,
+        enabled: hasPhone,
+        onTap: hasPhone ? () => _launchContactUrl(context, 'sms:$cleanPhone') : null,
+      ),
+    ];
+
+    return Row(
+      children: actions.map((a) {
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 3),
+            child: GestureDetector(
+              onTap: a.onTap,
+              child: AnimatedOpacity(
+                opacity: a.enabled ? 1.0 : 0.25,
+                duration: const Duration(milliseconds: 200),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  decoration: BoxDecoration(
+                    color: a.color.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: a.color.withValues(alpha: 0.28)),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(a.icon, color: a.color, size: 19),
+                      const SizedBox(height: 4),
+                      Text(
+                        a.label,
+                        style: TextStyle(
+                          color: a.color,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _QuickAction {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool enabled;
+  final VoidCallback? onTap;
+  const _QuickAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.enabled,
+    required this.onTap,
+  });
 }

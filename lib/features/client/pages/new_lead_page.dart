@@ -2,6 +2,7 @@ import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:crm/core/constants/app_colors.dart';
 import 'package:crm/models/lead_model.dart';
 import 'package:crm/viewmodels/leads_viewmodel.dart';
+import 'package:crm/viewmodels/user_role_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -36,7 +37,7 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
     'Facebook Ads', 'Full Digital Marketing Package', 'Content Creation',
     'Website Design', 'Email Marketing', 'Other',
   ];
-  final List<String> _assignees = ['Priya Sharma', 'Amit Kumar', 'Sneha Patel', 'Myself'];
+  // Assignees loaded dynamically from Firestore (see build method)
   final List<String> _sources   = [
     'Inbound Call', 'Website Form', 'WhatsApp', 'Referral',
     'Facebook Ad', 'Google Search', 'Walk-in', 'Exhibition',
@@ -119,6 +120,12 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Dynamic assignees from Firestore users collection
+    final usersAsync = ref.watch(allUsersProvider);
+    final assignees = usersAsync.maybeWhen(
+      data: (users) => users.map((u) => u.name ?? u.email).toList(),
+      orElse: () => <String>[],
+    );
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -218,13 +225,18 @@ class _NewLeadPageState extends ConsumerState<NewLeadPage> {
                         const SizedBox(height: 14),
 
                         _label('Assign To'),
-                        CustomDropdown<String>(
-                          items: _assignees,
-                          controller: _assignCtrl,
-                          hintText: 'Select team member',
-                          decoration: _dropDeco,
-                          onChanged: (_) {},
-                        ),
+                        assignees.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 14),
+                                child: Center(child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))),
+                              )
+                            : CustomDropdown<String>(
+                                items: assignees,
+                                controller: _assignCtrl,
+                                hintText: 'Select team member',
+                                decoration: _dropDeco,
+                                onChanged: (_) {},
+                              ),
                       ]),
                     ),
                     const SizedBox(height: 16),

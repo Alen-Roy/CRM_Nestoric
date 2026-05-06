@@ -668,7 +668,8 @@ class _LeadListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final stageColor = _stageColors[lead.stage] ?? AppColors.primaryMid;
-    final amountStr  = lead.amount != null && lead.amount!.isNotEmpty ? '₹${lead.amount}' : '—';
+    final rawAmt    = lead.amount?.replaceAll('₹', '').trim() ?? '';
+    final amountStr = rawAmt.isNotEmpty ? '₹$rawAmt' : '—';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -2101,12 +2102,52 @@ class _LiveMeetingBadge extends StatelessWidget {
   const _LiveMeetingBadge(
       {required this.leadName, required this.lat, required this.lng});
 
-  Future<void> _openMap() async {
+  Future<void> _openMap(BuildContext context) async {
     if (lat == null || lng == null) return;
-    final uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    // 1️⃣ Try geo: URI (native Maps app, no AndroidManifest queries needed)
+    try {
+      final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+      if (await canLaunchUrl(geoUri)) {
+        await launchUrl(geoUri);
+        return;
+      }
+    } catch (_) {}
+
+    // 2️⃣ Fall back to Google Maps web URL (skip canLaunchUrl — broken on Android 11+)
+    try {
+      final webUri = Uri.parse('https://maps.google.com/maps?q=$lat,$lng');
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      return;
+    } catch (_) {}
+
+    // 3️⃣ Show coordinates dialog as last resort
+    if (context.mounted) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          backgroundColor: AppColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Meeting Location',
+              style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w800, fontSize: 16)),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            SelectableText('$lat, $lng',
+                style: const TextStyle(color: AppColors.textDark, fontSize: 15,
+                    fontWeight: FontWeight.w700, fontFamily: 'monospace'),
+                textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            const Text('Long-press to copy, then paste in Google Maps.',
+                style: TextStyle(color: AppColors.textLight, fontSize: 11),
+                textAlign: TextAlign.center),
+          ]),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -2156,7 +2197,7 @@ class _LiveMeetingBadge extends StatelessWidget {
         // View Location button
         if (lat != null && lng != null)
           GestureDetector(
-            onTap: _openMap,
+            onTap: () => _openMap(context),
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -2407,13 +2448,101 @@ class _AdminAttendanceTile extends StatelessWidget {
 
   static final _timeFmt = DateFormat('h:mm a');
 
-  Future<void> _openMap() async {
+  Future<void> _openMap(BuildContext context) async {
     if (!record.hasLocation) return;
-    final uri = Uri.parse(
-        'https://www.google.com/maps/search/?api=1&query=${record.lat},${record.lng}');
-    if (await canLaunchUrl(uri)) {
-      launchUrl(uri, mode: LaunchMode.externalApplication);
+    final lat = record.lat!;
+    final lng = record.lng!;
+
+    // 1️⃣ Try native geo: URI — opens native Maps app on Android without needing
+    //    AndroidManifest <queries> for https. canLaunchUrl is unreliable on
+    //    Android 11+ for https URLs, so we skip it for the web fallback.
+    try {
+      final geoUri = Uri.parse('geo:$lat,$lng?q=$lat,$lng');
+      if (await canLaunchUrl(geoUri)) {
+        await launchUrl(geoUri);
+        return;
+      }
+    } catch (_) {}
+
+    // 2️⃣ Fall back to Google Maps web URL — skip canLaunchUrl (broken on 11+)
+    try {
+      final webUri = Uri.parse('https://maps.google.com/maps?q=$lat,$lng');
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      return;
+    } catch (_) {}
+
+    // 3️⃣ Last resort — show coordinates in a dialog so admin can copy/search
+    if (context.mounted) {
+      _showCoordsDialog(context, lat, lng);
     }
+  }
+
+  void _showCoordsDialog(BuildContext context, double lat, double lng) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: const [
+          Icon(Icons.location_on, color: AppColors.primary, size: 20),
+          SizedBox(width: 8),
+          Text('Check-in Location',
+              style: TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800)),
+        ]),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          const Text('Could not open Maps automatically.\nCoordinates:',
+              style: TextStyle(color: AppColors.textMid, fontSize: 13)),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: SelectableText(
+              '$lat, $lng',
+              style: const TextStyle(
+                  color: AppColors.textDark,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'monospace'),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text('Long-press above to copy, then paste in Google Maps.',
+              style: TextStyle(color: AppColors.textLight, fontSize: 11),
+              textAlign: TextAlign.center),
+        ]),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Center(
+                  child: Text('Close',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -2495,7 +2624,7 @@ class _AdminAttendanceTile extends StatelessWidget {
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
           if (record.hasLocation)
             GestureDetector(
-              onTap: _openMap,
+              onTap: () => _openMap(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(

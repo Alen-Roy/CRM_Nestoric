@@ -13,11 +13,11 @@ class CustomBottomNavBar extends StatelessWidget {
   });
 
   static const List<_NavItem> _items = [
-    _NavItem(icon: Symbols.home,            label: 'Home'),
-    _NavItem(icon: Symbols.leaderboard,     label: 'Leads'),
-    _NavItem(icon: Symbols.person,          label: 'Clients'),
-    _NavItem(icon: Symbols.task_alt,        label: 'Tasks'),
-    _NavItem(icon: Symbols.description,     label: 'Reports'),
+    _NavItem(icon: Symbols.home,        label: 'Home'),
+    _NavItem(icon: Symbols.leaderboard, label: 'Leads'),
+    _NavItem(icon: Symbols.person,      label: 'Clients'),
+    _NavItem(icon: Symbols.task_alt,    label: 'Tasks'),
+    _NavItem(icon: Symbols.description, label: 'Reports'),
   ];
 
   @override

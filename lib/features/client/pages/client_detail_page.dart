@@ -58,161 +58,131 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
       backgroundColor: AppColors.background,
       body: CustomScrollView(
         slivers: [
+          // ── Hero App Bar — matches Lead Detail style ──────────────────────
           SliverAppBar(
-            expandedHeight: 280,
+            expandedHeight: 260,
             pinned: true,
-            backgroundColor: AppColors.primary,
+            backgroundColor: statusColor,
             leading: IconButton(
               icon: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLight,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.arrow_back_ios_new,
-                  color: AppColors.textDark,
-                  size: 16,
-                ),
+                width: 36, height: 36,
+                decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.arrow_back_ios_new, color: AppColors.textDark, size: 16),
               ),
               onPressed: () => Navigator.pop(context),
             ),
             actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 16),
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.more_vert,
-                    color: AppColors.textDark,
-                    size: 18,
-                  ),
+              // Status change button
+              IconButton(
+                icon: Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                  child: const Icon(Icons.tune_rounded, color: AppColors.primary, size: 17),
                 ),
+                onPressed: () => _showStatusSheet(context),
               ),
             ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [statusColor, statusColor.withOpacity(0.7)],
+                    begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  ),
                 ),
                 child: SafeArea(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 30),
-                      // Avatar with status ring
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: AppColors.primaryMid,
-                            width: 2,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 44,
-                          backgroundColor: AppColors.primaryLight,
-                          child: Text(
-                            _client.name[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.w800,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 48, 16, 16),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          // Square rounded avatar
+                          Container(
+                            width: 60, height: 60,
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryLight,
+                              borderRadius: BorderRadius.circular(18),
+                            ),
+                            child: Center(
+                              child: Text(
+                                _client.name[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: AppColors.textDark,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        _client.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      if (_client.companyName != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          _client.companyName!,
-                          style: TextStyle(
-                            color: AppColors.textMid,
-                            fontSize: 13,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(_client.name,
+                                    style: const TextStyle(
+                                        color: AppColors.textDark,
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.w800)),
+                                if (_client.companyName != null)
+                                  Text(_client.companyName!,
+                                      style: const TextStyle(
+                                          color: AppColors.textMid, fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                          // Contact circles
+                          Column(children: [
+                            _contactCircle(Icons.call_rounded, () async {
+                              final uri = Uri.parse(
+                                'tel:${_client.phone.replaceAll(RegExp(r'[\s\-()]'), '')}',
+                              );
+                              if (await canLaunchUrl(uri)) launchUrl(uri);
+                            }),
+                            const SizedBox(height: 6),
+                            _contactCircle(Icons.chat_rounded, () async {
+                              final uri = Uri.parse(
+                                'https://wa.me/${_client.phone.replaceAll(RegExp(r'[\s\-+()]'), '')}',
+                              );
+                              if (await canLaunchUrl(uri)) launchUrl(uri);
+                            }),
+                            const SizedBox(height: 6),
+                            _contactCircle(Icons.mail_rounded, () async {
+                              if (_client.email != null) {
+                                final uri = Uri.parse('mailto:${_client.email}');
+                                if (await canLaunchUrl(uri)) launchUrl(uri);
+                              }
+                            }),
+                          ]),
+                        ]),
+                        const SizedBox(height: 14),
+                        // Status pill
+                        GestureDetector(
+                          onTap: () => _showStatusSheet(context),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                            decoration: BoxDecoration(
+                                color: AppColors.primaryLight,
+                                borderRadius: BorderRadius.circular(20)),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(_client.status,
+                                    style: const TextStyle(
+                                        color: AppColors.textDark,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700)),
+                                const SizedBox(width: 4),
+                                const Icon(Icons.keyboard_arrow_down_rounded,
+                                    color: AppColors.textDark, size: 14),
+                              ],
+                            ),
                           ),
                         ),
                       ],
-                      const SizedBox(height: 10),
-                      GestureDetector(
-                        onTap: () => _showStatusSheet(context),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 5,
-                          ),
-                          decoration: BoxDecoration(
-                            color: statusColor.withValues(alpha: 0.22),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: statusColor.withValues(alpha: 0.5),
-                              width: 1,
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                _client.status,
-                                style: const TextStyle(
-                                  color: AppColors.textDark,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(width: 5),
-                              const Icon(
-                                Icons.keyboard_arrow_down_rounded,
-                                color: AppColors.textDark,
-                                size: 14,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      // Action buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _actionBtn(Icons.call_rounded, 'Call', () async {
-                            final uri = Uri.parse(
-                              'tel:${_client.phone.replaceAll(RegExp(r'[\s\-()]'), '')}',
-                            );
-                            if (await canLaunchUrl(uri)) launchUrl(uri);
-                          }),
-                          const SizedBox(width: 16),
-                          _actionBtn(Icons.chat_rounded, 'WhatsApp', () async {
-                            final uri = Uri.parse(
-                              'https://wa.me/${_client.phone.replaceAll(RegExp(r'[\s\-+()]'), '')}',
-                            );
-                            if (await canLaunchUrl(uri)) launchUrl(uri);
-                          }),
-                          const SizedBox(width: 16),
-                          _actionBtn(Icons.mail_rounded, 'Email', () async {
-                            if (_client.email != null) {
-                              final uri = Uri.parse('mailto:${_client.email}');
-                              if (await canLaunchUrl(uri)) launchUrl(uri);
-                            }
-                          }),
-                        ],
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
@@ -221,20 +191,28 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
 
           // ── Body ─────────────────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Revenue highlight card
-                  if (_client.monthlyValue != null)
-                    Container(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+
+                // Revenue highlight card
+                if (_client.monthlyValue != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.only(bottom: 20),
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.25),
+                            blurRadius: 18, offset: const Offset(0, 6),
+                          ),
+                        ],
                       ),
                       child: Row(
                         children: [
@@ -242,13 +220,9 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Monthly Value',
-                                  style: TextStyle(
-                                    color: AppColors.textMid,
-                                    fontSize: 12,
-                                  ),
-                                ),
+                                const Text('Monthly Value',
+                                    style: TextStyle(
+                                        color: AppColors.primarySoft, fontSize: 12)),
                                 const SizedBox(height: 4),
                                 Text(
                                   '₹${_client.monthlyValue!.toStringAsFixed(0)}',
@@ -265,74 +239,72 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryLight,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: const Icon(
-                              Symbols.currency_rupee,
-                              color: Colors.white,
-                              size: 26,
-                            ),
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(14)),
+                            child: const Icon(Symbols.currency_rupee,
+                                color: Colors.white, size: 26),
                           ),
                         ],
                       ),
                     ),
+                  ),
 
-                  // Contact Details section
-                  _sectionTitle('Contact Details'),
-                  const SizedBox(height: 12),
-                  _infoGrid([
-                    _InfoItem(Symbols.mail, 'Email', _client.email ?? '—'),
-                    _InfoItem(Symbols.call, 'Phone', _client.phone),
-                    _InfoItem(
-                      Symbols.location_city,
-                      'City',
-                      _client.city ?? '—',
+                // Contact Details section
+                _sectionTitle('Contact Details'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _infoGroup([
+                    _infoRow(Symbols.mail, _client.email ?? '—', 'Email'),
+                    _infoRow(Symbols.call, _client.phone, 'Phone'),
+                    _infoRow(Symbols.location_city, _client.city ?? '—', 'City'),
+                    _infoRow(Symbols.business, _client.companyName ?? '—', 'Company'),
+                  ]),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Service & Assignment section
+                _sectionTitle('Service Details'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _infoGroup([
+                    _infoRow(Symbols.home_repair_service, _client.service ?? '—', 'Service'),
+                    _infoRow(Symbols.manage_accounts, _client.assignTo ?? '—', 'Assigned To'),
+                  ]),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Timeline section
+                _sectionTitle('Timeline'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: _infoGroup([
+                    _infoRowWidget(
+                      Symbols.calendar_today,
+                      DateFormat('d MMM yyyy').format(_client.joinedDate),
+                      'Client Since',
+                      color: AppColors.primary,
                     ),
-                    _InfoItem(
-                      Symbols.business,
-                      'Company',
-                      _client.companyName ?? '—',
-                    ),
-                    _InfoItem(
-                      Symbols.home_repair_service,
-                      'Service',
-                      _client.service ?? '—',
-                    ),
-                    _InfoItem(
-                      Symbols.manage_accounts,
-                      'Assigned To',
-                      _client.assignTo ?? '—',
+                    _tappableDateRow(
+                      context: context,
+                      ref: ref,
+                      client: _client,
+                      icon: Symbols.event_repeat,
+                      label: 'Contract Renewal',
+                      date: _client.contractRenewal,
+                      color: AppColors.primaryGlow,
                     ),
                   ]),
+                ),
 
+                // Notes
+                if (_client.notes != null && _client.notes!.isNotEmpty) ...[
                   const SizedBox(height: 20),
-
-                  // Dates section
-                  _sectionTitle('Timeline'),
-                  const SizedBox(height: 12),
-                  _dateRow(
-                    Symbols.calendar_today,
-                    'Joined',
-                    DateFormat('d MMM yyyy').format(_client.joinedDate),
-                    AppColors.primary,
-                  ),
-                  _tappableDateRow(
-                    context: context,
-                    ref: ref,
-                    client: _client,
-                    icon: Symbols.event_repeat,
-                    label: 'Contract Renewal',
-                    date: _client.contractRenewal,
-                    color: AppColors.primaryGlow,
-                  ),
-
-                  // Notes
-                  if (_client.notes != null && _client.notes!.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _sectionTitle('Notes'),
-                    const SizedBox(height: 12),
-                    Container(
+                  _sectionTitle('Notes'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -342,29 +314,27 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.primary.withValues(alpha: 0.06),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                            blurRadius: 12, offset: const Offset(0, 4),
                           ),
                         ],
                       ),
                       child: Text(
                         _client.notes!,
                         style: const TextStyle(
-                          color: AppColors.textMid,
-                          fontSize: 14,
-                          height: 1.5,
-                        ),
+                            color: AppColors.textMid, fontSize: 14, height: 1.5),
                       ),
                     ),
-                  ],
+                  ),
+                ],
 
-                  const SizedBox(height: 20),
-                  _ClientMeetingCard(client: _client),
+                const SizedBox(height: 20),
+                _ClientMeetingCard(client: _client),
 
-                  const SizedBox(height: 20),
-                  _sectionTitle('Activity History'),
-                  const SizedBox(height: 12),
-                  activitiesAsync.when(
+                const SizedBox(height: 20),
+                _sectionTitle('Activity History'),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: activitiesAsync.when(
                     data: (activities) => ActivityTimeline(
                       activities: activities,
                       onDelete: (a) {
@@ -378,8 +348,7 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                       child: Padding(
                         padding: EdgeInsets.all(16),
                         child: CircularProgressIndicator(
-                          color: AppColors.primary,
-                          strokeWidth: 2,
+                          color: AppColors.primary, strokeWidth: 2,
                         ),
                       ),
                     ),
@@ -388,9 +357,9 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                       style: const TextStyle(color: AppColors.danger),
                     ),
                   ),
-                  const SizedBox(height: 110),
-                ],
-              ),
+                ),
+                const SizedBox(height: 110),
+              ],
             ),
           ),
         ],
@@ -407,197 +376,121 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
     );
   }
 
-  static Widget _actionBtn(IconData icon, String label, VoidCallback onTap) {
+  // Contact circle button in header (matches lead detail style)
+  Widget _contactCircle(IconData icon, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppColors.textDark, size: 22),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: AppColors.textMid,
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      child: Container(
+        width: 38, height: 38,
+        decoration: BoxDecoration(
+          color: AppColors.textDark.withOpacity(0.18),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(icon, color: AppColors.textDark, size: 18),
       ),
     );
   }
 
   Widget _sectionTitle(String title) {
-    return Row(
-      children: [
-        Container(
-          width: 3,
-          height: 18,
-          decoration: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(left: 20, bottom: 12),
+      child: Row(children: [
+        Container(width: 3, height: 18,
+            decoration: BoxDecoration(
+                color: AppColors.primary, borderRadius: BorderRadius.circular(2))),
         const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.textDark,
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+        Text(title,
+            style: const TextStyle(
+                color: AppColors.textDark, fontSize: 16, fontWeight: FontWeight.w700)),
+      ]),
+    );
+  }
+
+  // Grouped card wrapping multiple rows with dividers — matches lead detail
+  Widget _infoGroup(List<Widget> rows) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(color: AppColors.primary.withOpacity(0.06), blurRadius: 14, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 5, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Column(
+        children: rows.asMap().entries.map((e) {
+          final isLast = e.key == rows.length - 1;
+          return Column(children: [
+            e.value,
+            if (!isLast) const Divider(height: 1, thickness: 1, color: AppColors.divider, indent: 64, endIndent: 16),
+          ]);
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String value, String label, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(children: [
+        Container(
+          width: 34, height: 34,
+          decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: AppColors.primary, size: 17),
         ),
-      ],
-    );
-  }
-
-  Widget _infoGrid(List<_InfoItem> items) {
-    return Column(
-      children: List.generate((items.length / 2).ceil(), (row) {
-        final a = items[row * 2];
-        final b = row * 2 + 1 < items.length ? items[row * 2 + 1] : null;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: Row(
-            children: [
-              Expanded(child: _infoCard(a)),
-              const SizedBox(width: 10),
-              Expanded(child: b != null ? _infoCard(b) : const SizedBox()),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-
-  Widget _infoCard(_InfoItem item) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(item.icon, color: AppColors.primary, size: 16),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.label,
-                  style: const TextStyle(
-                    color: AppColors.textLight,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  item.value,
-                  style: const TextStyle(
-                    color: AppColors.textDark,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _dateRow(IconData icon, String label, String value, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 18),
-          ),
-          const SizedBox(width: 14),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
+        const SizedBox(width: 14),
+        Flexible(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label,
                 style: const TextStyle(
-                  color: AppColors.textLight,
-                  fontSize: 11,
-                ),
-              ),
-              Text(
-                value,
+                    color: AppColors.textLight, fontSize: 11, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value,
                 style: TextStyle(
-                  color: color,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+                    color: valueColor ?? AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
+          ]),
+        ),
+      ]),
     );
   }
+
+  // Color-accented info row for dates
+  Widget _infoRowWidget(IconData icon, String value, String label, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      child: Row(children: [
+        Container(
+          width: 34, height: 34,
+          decoration: BoxDecoration(
+              color: (color ?? AppColors.primary).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: color ?? AppColors.primary, size: 17),
+        ),
+        const SizedBox(width: 14),
+        Flexible(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label,
+                style: const TextStyle(
+                    color: AppColors.textLight, fontSize: 11, fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: TextStyle(
+                    color: color ?? AppColors.textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ]),
+    );
+  }
+
+  // _dateRow removed — replaced by _infoRowWidget used inside _infoGroup
 
   // ── Status change bottom sheet ──────────────────────────────────────────────
   void _showStatusSheet(BuildContext context) {
@@ -707,7 +600,7 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
     );
   }
 
-  // ── Tappable date row for contract renewal ──────────────────────────────────
+  // ── Tappable date row for contract renewal (inside _infoGroup) ────────────
   Widget _tappableDateRow({
     required BuildContext context,
     required WidgetRef ref,
@@ -743,65 +636,42 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
           await ref.read(clientRepositoryProvider).updateClient(updated);
         }
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
         child: Row(
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 34, height: 34,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, color: color, size: 18),
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Icon(icon, color: color, size: 17),
             ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: AppColors.textLight,
-                      fontSize: 11,
-                    ),
-                  ),
+                  Text(label,
+                      style: const TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500)),
                   Text(
                     date != null
                         ? DateFormat('d MMM yyyy').format(date)
                         : 'Tap to set date',
                     style: TextStyle(
                       color: date != null ? color : AppColors.primary,
-                      fontSize: 15,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      fontStyle: date == null
-                          ? FontStyle.italic
-                          : FontStyle.normal,
+                      fontStyle: date == null ? FontStyle.italic : FontStyle.normal,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(
-              Icons.edit_calendar_outlined,
-              color: AppColors.primary,
-              size: 18,
-            ),
+            Icon(Icons.edit_calendar_outlined, color: color, size: 16),
           ],
         ),
       ),
@@ -818,11 +688,8 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
   }
 }
 
-class _InfoItem {
-  final IconData icon;
-  final String label, value;
-  const _InfoItem(this.icon, this.label, this.value);
-}
+
+
 
 // ── Log Activity Sheet ────────────────────────────────────────────────────────
 class _LogSheet extends StatefulWidget {

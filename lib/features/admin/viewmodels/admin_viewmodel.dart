@@ -410,11 +410,10 @@ class AdminActionsNotifier extends Notifier<String?> {
     String? notes,
     String? adminNote,
   }) async {
-    final adminUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     final taskRef = await _db.collection('tasks').add({
       'title': title,
       'notes': notes,
-      'scheduledAt': scheduledAt,
+      'scheduledAt': Timestamp.fromDate(scheduledAt),
       'priority': priority,
       'userId': workerUid,
       'assignedTo': workerUid,

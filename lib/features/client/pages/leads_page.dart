@@ -6,6 +6,33 @@ import 'package:crm/viewmodels/leads_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+Future<void> _launch(BuildContext context, String url) async {
+  final uri = Uri.parse(url);
+  final mode = (uri.scheme == 'https' || uri.scheme == 'http')
+      ? LaunchMode.externalApplication
+      : LaunchMode.platformDefault;
+  try {
+    final launched = await launchUrl(uri, mode: mode);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('No app found to open: ${uri.scheme}'),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open: $url'),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+}
+
 
 class LeadsPage extends ConsumerStatefulWidget {
   const LeadsPage({super.key});
@@ -252,11 +279,14 @@ class _LeadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cleanPhone = lead.phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final hasPhone   = cleanPhone.isNotEmpty;
+    final hasEmail   = lead.email != null && lead.email!.isNotEmpty;
+
     return GestureDetector(
       onTap: () => Navigator.push(
           context, MaterialPageRoute(builder: (_) => LeadDetailPage(lead: lead))),
       child: Container(
-        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(20),
@@ -266,68 +296,172 @@ class _LeadCard extends StatelessWidget {
             BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 6, offset: const Offset(0, 2)),
           ],
         ),
-        child: Row(children: [
-          // Avatar
-          Container(
-            width: 50, height: 50,
-            decoration: BoxDecoration(
-                color: AppColors.primaryLight,
-                borderRadius: BorderRadius.circular(16)),
-            child: Center(child: Text(lead.name[0].toUpperCase(),
-                style: const TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800))),
-          ),
-          const SizedBox(width: 14),
-          // Info
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(lead.name,
-                  style: const TextStyle(
-                      color: AppColors.textDark,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text(lead.companyName ?? lead.phone,
-                  style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
-              const SizedBox(height: 6),
-              Row(children: [
-                const Icon(Symbols.call, color: AppColors.textLight, size: 12),
-                const SizedBox(width: 4),
-                Text(lead.phone,
-                    style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
-                if (lead.lastContacted != null && lead.lastContacted!.isNotEmpty) ...[
-                  const SizedBox(width: 10),
-                  const Icon(Symbols.calendar_today, color: AppColors.textLight, size: 12),
-                  const SizedBox(width: 4),
-                  Text(lead.lastContacted!,
-                      style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Lead info ──────────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(children: [
+                // Avatar
+                Container(
+                  width: 50, height: 50,
+                  decoration: BoxDecoration(
+                      color: AppColors.primaryLight,
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Center(child: Text(lead.name[0].toUpperCase(),
+                      style: const TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800))),
+                ),
+                const SizedBox(width: 14),
+                // Info
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(lead.name,
+                        style: const TextStyle(
+                            color: AppColors.textDark,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Text(lead.companyName ?? lead.phone,
+                        style: const TextStyle(color: AppColors.textMid, fontSize: 13)),
+                    const SizedBox(height: 5),
+                    Row(children: [
+                      const Icon(Symbols.call, color: AppColors.textLight, size: 12),
+                      const SizedBox(width: 4),
+                      Text(lead.phone,
+                          style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+                      if (lead.lastContacted != null && lead.lastContacted!.isNotEmpty) ...[
+                        const SizedBox(width: 10),
+                        const Icon(Symbols.calendar_today, color: AppColors.textLight, size: 12),
+                        const SizedBox(width: 4),
+                        Text(lead.lastContacted!,
+                            style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+                      ],
+                    ]),
+                  ]),
+                ),
+                // Stage badge + amount
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                        color: stageColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(50)),
+                    child: Text(lead.stage,
+                        style: TextStyle(
+                            color: stageColor, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ),
+                  if (lead.amount != null && lead.amount!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text('₹${lead.amount}',
+                        style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700)),
+                  ],
+                ]),
               ]),
-            ]),
-          ),
-          // Stage badge + amount
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                  color: stageColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(50)),
-              child: Text(lead.stage,
-                  style: TextStyle(
-                      color: stageColor, fontSize: 11, fontWeight: FontWeight.w700)),
             ),
-            if (lead.amount != null && lead.amount!.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text('₹${lead.amount}',
-                  style: const TextStyle(
-                      color: AppColors.primary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700)),
+
+            // ── Quick action buttons ────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+              child: Row(
+                children: [
+                  _ActionBtn(
+                    icon: Symbols.call,
+                    label: 'Call',
+                    color: AppColors.primary,
+                    enabled: hasPhone,
+                    onTap: hasPhone ? () => _launch(context, 'tel:$cleanPhone') : null,
+                  ),
+                  const SizedBox(width: 8),
+                  _ActionBtn(
+                    icon: Icons.message_rounded,
+                    label: 'WhatsApp',
+                    color: AppColors.primaryGlow,
+                    enabled: hasPhone,
+                    onTap: hasPhone
+                        ? () => _launch(context, 'https://wa.me/$cleanPhone')
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  _ActionBtn(
+                    icon: Symbols.mail,
+                    label: 'Email',
+                    color: AppColors.primaryMid,
+                    enabled: hasEmail,
+                    onTap: hasEmail
+                        ? () => _launch(context, 'mailto:${lead.email}')
+                        : null,
+                  ),
+                  const SizedBox(width: 8),
+                  _ActionBtn(
+                    icon: Icons.sms_rounded,
+                    label: 'SMS',
+                    color: AppColors.primarySoft,
+                    enabled: hasPhone,
+                    onTap: hasPhone ? () => _launch(context, 'sms:$cleanPhone') : null,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Small action button used inside lead card ─────────────────────────────────
+class _ActionBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool enabled;
+  final VoidCallback? onTap;
+  const _ActionBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap != null ? () { onTap!(); } : null,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedOpacity(
+          opacity: enabled ? 1.0 : 0.25,
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withValues(alpha: 0.22)),
+            ),
+            child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: color, size: 18),
+              const SizedBox(height: 4),
+              Text(label,
+                  style: TextStyle(
+                      color: color,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.2)),
             ],
-          ]),
-        ]),
+          ),
+          ),
+        ),
       ),
     );
   }

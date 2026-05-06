@@ -1,8 +1,5 @@
 import 'package:crm/core/constants/app_colors.dart';
-import 'package:crm/features/admin/pages/admin_dashboard_page.dart';
-import 'package:crm/features/client/features/shell/main_shell.dart';
 import 'package:crm/viewmodels/auth_viewmodel.dart';
-import 'package:crm/viewmodels/user_role_viewmodel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -27,26 +24,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(authProvider, (_, next) async {
-      if (next.status == AuthStatus.authenticated) {
-        // Check the user's role in Firestore before navigating
-        final profile = await ref.read(currentUserProfileProvider.future);
-        if (!context.mounted) return;
-        if (profile != null && profile.isAdmin) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboardPage()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const MainShell()),
-          );
-        }
-      }
+    // Show error snackbar on login failure.
+    // Navigation is handled entirely by main.dart watching currentUserProfileProvider —
+    // when Firebase auth state changes, the stream emits and main.dart swaps home: automatically.
+    ref.listen(authProvider, (_, next) {
       if (next.status == AuthStatus.error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.errorMessage ?? 'Something went wrong'), behavior: SnackBarBehavior.floating),
+          SnackBar(
+            content: Text(next.errorMessage ?? 'Something went wrong'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     });
