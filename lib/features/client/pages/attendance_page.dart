@@ -108,17 +108,30 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                 error: (e, _) => Center(child: Text('Error: $e',
                     style: const TextStyle(color: AppColors.danger))),
                 data: (records) {
-                  if (records.isEmpty) {
-                    return _EmptyHistory();
+                  if (records.isEmpty) return _EmptyHistory();
+
+                  // ── Group records by month key e.g. "May 2026" ──
+                  final grouped = <String, List<AttendanceModel>>{};
+                  for (final r in records) {
+                    final key = DateFormat('MMMM yyyy').format(r.checkInTime);
+                    grouped.putIfAbsent(key, () => []).add(r);
                   }
+                  // Sort months newest-first
+                  final monthKeys = grouped.keys.toList()
+                    ..sort((a, b) {
+                      final da = DateFormat('MMMM yyyy').parse(a);
+                      final db = DateFormat('MMMM yyyy').parse(b);
+                      return db.compareTo(da);
+                    });
+
                   return ListView(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
                     children: [
-                      // ── Summary strip ──────────────────────────────────
+                      // ── Overall summary strip ────────────────────────────
                       _SummaryStrip(records: records),
                       const SizedBox(height: 20),
 
-                      // ── History heading ────────────────────────────────
+                      // ── Section heading ───────────────────────────────────
                       Row(children: [
                         Container(width: 3, height: 18,
                             decoration: BoxDecoration(color: AppColors.primary,
@@ -138,9 +151,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                                   fontSize: 11, fontWeight: FontWeight.w700)),
                         ),
                       ]),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 14),
 
-                      ...records.map((r) => _AttendanceTile(record: r)),
+                      // ── Month groups ───────────────────────────────────────
+                      ...monthKeys.map((month) => _MonthGroup(
+                        monthLabel: month,
+                        records: grouped[month]!,
+                        isCurrentMonth: month ==
+                            DateFormat('MMMM yyyy').format(DateTime.now()),
+                      )),
                     ],
                   );
                 },
@@ -478,8 +497,9 @@ class _AttendanceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isToday = record.date == AttendanceModel.todayKey();
-    final isOngoing = record.isPresent && !record.hasCheckedOut;
+    final isToday       = record.date == AttendanceModel.todayKey();
+    final isMissed      = record.failedCheckout;              // auto-closed after 12 h
+    final isOngoing     = !record.hasCheckedOut && !isMissed; // truly still active
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -488,11 +508,13 @@ class _AttendanceTile extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isOngoing
-              ? AppColors.success.withOpacity(0.4)
-              : isToday
-                  ? AppColors.primarySoft
-                  : AppColors.border,
+          color: isMissed
+              ? AppColors.danger.withOpacity(0.4)
+              : isOngoing
+                  ? AppColors.success.withOpacity(0.4)
+                  : isToday
+                      ? AppColors.primarySoft
+                      : AppColors.border,
         ),
         boxShadow: [BoxShadow(
             color: AppColors.primary.withOpacity(0.04),
@@ -537,10 +559,17 @@ class _AttendanceTile extends StatelessWidget {
                 style: const TextStyle(color: AppColors.textMid, fontSize: 11)),
             if (record.hasCheckedOut) ...[
               const SizedBox(width: 10),
-              Icon(Icons.logout_rounded, size: 11, color: AppColors.danger),
+              Icon(Icons.logout_rounded, size: 11,
+                  color: record.failedCheckout ? AppColors.danger : AppColors.danger),
               const SizedBox(width: 3),
               Text(_timeFmt.format(record.checkOutTime!),
-                  style: const TextStyle(color: AppColors.textMid, fontSize: 11)),
+                  style: TextStyle(
+                      color: record.failedCheckout ? AppColors.danger : AppColors.textMid,
+                      fontSize: 11)),
+            ],
+            if (isMissed) ...[
+              const SizedBox(width: 6),
+              const Icon(Icons.warning_amber_rounded, size: 11, color: AppColors.danger),
             ],
           ]),
         ])),
@@ -550,15 +579,21 @@ class _AttendanceTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: isOngoing
-                  ? AppColors.success.withOpacity(0.1)
-                  : AppColors.primaryLight,
+              color: isMissed
+                  ? AppColors.dangerLight
+                  : isOngoing
+                      ? AppColors.success.withOpacity(0.1)
+                      : AppColors.primaryLight,
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              isOngoing ? 'Active' : record.durationLabel,
+              isMissed  ? 'Missed Checkout' :
+              isOngoing ? 'Active' :
+                          record.durationLabel,
               style: TextStyle(
-                  color: isOngoing ? AppColors.success : AppColors.primary,
+                  color: isMissed  ? AppColors.danger :
+                         isOngoing ? AppColors.success :
+                                     AppColors.primary,
                   fontSize: 10, fontWeight: FontWeight.w700),
             ),
           ),
@@ -583,6 +618,235 @@ class _AttendanceTile extends StatelessWidget {
       ]),
     );
   }
+}
+
+// ── Month group (collapsible) ─────────────────────────────────────────────────
+class _MonthGroup extends StatefulWidget {
+  final String monthLabel;
+  final List<AttendanceModel> records;
+  final bool isCurrentMonth;
+  const _MonthGroup({
+    required this.monthLabel,
+    required this.records,
+    required this.isCurrentMonth,
+  });
+  @override
+  State<_MonthGroup> createState() => _MonthGroupState();
+}
+
+class _MonthGroupState extends State<_MonthGroup>
+    with SingleTickerProviderStateMixin {
+  late bool _expanded;
+  late AnimationController _ctrl;
+  late Animation<double> _rotate;
+
+  @override
+  void initState() {
+    super.initState();
+    _expanded = widget.isCurrentMonth; // current month open by default
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 250));
+    _rotate = Tween<double>(begin: 0, end: 0.5).animate(
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+    if (_expanded) _ctrl.forward();
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  void _toggle() {
+    setState(() => _expanded = !_expanded);
+    _expanded ? _ctrl.forward() : _ctrl.reverse();
+  }
+
+  // ── Month stats ──────────────────────────────────────────────────────────
+  int get _total   => widget.records.length;
+  int get _withOut => widget.records.where((r) => r.hasCheckedOut).length;
+  int get _missed  => widget.records.where((r) => r.failedCheckout).length;
+  String get _checkoutRate {
+    if (_total == 0) return '0%';
+    return '${((_withOut / _total) * 100).round()}%';
+  }
+  String get _avgHours {
+    final mins = widget.records
+        .where((r) => r.duration != null)
+        .map((r) => r.duration!.inMinutes)
+        .toList();
+    if (mins.isEmpty) return '—';
+    final avg = mins.reduce((a, b) => a + b) ~/ mins.length;
+    final h = avg ~/ 60;
+    final m = (avg % 60).toString().padLeft(2, '0');
+    return h > 0 ? '${h}h ${m}m' : '${avg}m';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: widget.isCurrentMonth
+              ? AppColors.primarySoft
+              : AppColors.border,
+          width: widget.isCurrentMonth ? 1.5 : 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // ── Header ──────────────────────────────────────────────────────
+          InkWell(
+            onTap: _toggle,
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    // Month icon badge
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        gradient: widget.isCurrentMonth
+                            ? AppColors.primaryGradient
+                            : AppColors.subtleGradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Text(
+                          widget.monthLabel.substring(0, 3).toUpperCase(),
+                          style: TextStyle(
+                            color: widget.isCurrentMonth
+                                ? Colors.white
+                                : AppColors.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          Text(
+                            widget.monthLabel,
+                            style: const TextStyle(
+                              color: AppColors.textDark,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          if (widget.isCurrentMonth) ...[ 
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text('Current',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700)),
+                            ),
+                          ],
+                        ]),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$_total ${_total == 1 ? "day" : "days"} · '
+                          '$_withOut checked out'
+                          '${_missed > 0 ? " · $_missed missed" : ""}',
+                          style: const TextStyle(
+                              color: AppColors.textLight, fontSize: 11),
+                        ),
+                      ],
+                    )),
+                    // Chevron
+                    RotationTransition(
+                      turns: _rotate,
+                      child: const Icon(Icons.keyboard_arrow_down_rounded,
+                          color: AppColors.textLight, size: 22),
+                    ),
+                  ]),
+
+                  // ── Mini stats row ─────────────────────────────────────
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(children: [
+                      _miniStat('$_total',       'Days',       AppColors.primary),
+                      _miniDivider(),
+                      _miniStat(_checkoutRate,   'Checkout %', AppColors.success),
+                      _miniDivider(),
+                      _miniStat(_avgHours,       'Avg Hours',  AppColors.primaryGlow),
+                      if (_missed > 0) ...[ 
+                        _miniDivider(),
+                        _miniStat('$_missed', 'Missed', AppColors.danger),
+                      ],
+                    ]),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Expandable tiles ─────────────────────────────────────────────
+          AnimatedSize(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            child: _expanded
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                    child: Column(
+                      children: [
+                        Container(height: 1, color: AppColors.divider,
+                            margin: const EdgeInsets.only(bottom: 10)),
+                        ...widget.records.map((r) => _AttendanceTile(record: r)),
+                      ],
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _miniStat(String val, String label, Color color) => Expanded(
+    child: Column(children: [
+      Text(val,
+          style: TextStyle(
+              color: color, fontSize: 14, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 2),
+      Text(label,
+          style: const TextStyle(
+              color: AppColors.textLight, fontSize: 9, fontWeight: FontWeight.w500),
+          textAlign: TextAlign.center),
+    ]),
+  );
+
+  Widget _miniDivider() => Container(
+      width: 1, height: 28, color: AppColors.border,
+      margin: const EdgeInsets.symmetric(horizontal: 4));
 }
 
 // ── Empty state ────────────────────────────────────────────────────────────────

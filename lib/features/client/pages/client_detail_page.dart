@@ -8,10 +8,37 @@ import 'package:crm/viewmodels/client_viewmodel.dart';
 import 'package:crm/viewmodels/meeting_session_viewmodel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+// ── Global launcher helper (same pattern as lead_detail_page) ───────────────
+Future<void> _launchUrl(BuildContext context, String url) async {
+  final uri = Uri.parse(url);
+  final mode = (uri.scheme == 'https' || uri.scheme == 'http')
+      ? LaunchMode.externalApplication
+      : LaunchMode.platformDefault;
+  try {
+    final launched = await launchUrl(uri, mode: mode);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('No app found to open: ${uri.scheme}'),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  } catch (_) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open: $url'),
+        backgroundColor: AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+    }
+  }
+}
 
 class ClientDetailPage extends ConsumerStatefulWidget {
   final ClientModel client;
@@ -133,31 +160,14 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                               ],
                             ),
                           ),
-                          // Contact circles
-                          Column(children: [
-                            _contactCircle(Icons.call_rounded, () async {
-                              final uri = Uri.parse(
-                                'tel:${_client.phone.replaceAll(RegExp(r'[\s\-()]'), '')}',
-                              );
-                              if (await canLaunchUrl(uri)) launchUrl(uri);
-                            }),
-                            const SizedBox(height: 6),
-                            _contactCircle(Icons.chat_rounded, () async {
-                              final uri = Uri.parse(
-                                'https://wa.me/${_client.phone.replaceAll(RegExp(r'[\s\-+()]'), '')}',
-                              );
-                              if (await canLaunchUrl(uri)) launchUrl(uri);
-                            }),
-                            const SizedBox(height: 6),
-                            _contactCircle(Icons.mail_rounded, () async {
-                              if (_client.email != null) {
-                                final uri = Uri.parse('mailto:${_client.email}');
-                                if (await canLaunchUrl(uri)) launchUrl(uri);
-                              }
-                            }),
-                          ]),
                         ]),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: 12),
+                        // ── Quick contact bar (same premium layout as Lead Detail) ──────
+                        _ClientContactBar(
+                          phone: _client.phone,
+                          email: _client.email,
+                        ),
+                        const SizedBox(height: 10),
                         // Status pill
                         GestureDetector(
                           onTap: () => _showStatusSheet(context),
@@ -254,8 +264,60 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _infoGroup([
-                    _infoRow(Symbols.mail, _client.email ?? '—', 'Email'),
-                    _infoRow(Symbols.call, _client.phone, 'Phone'),
+                    _tappableContactRow(
+                      icon: Symbols.mail,
+                      value: _client.email ?? '—',
+                      label: 'Email',
+                      color: AppColors.primaryMid,
+                      actionButtons: (_client.email != null && _client.email!.isNotEmpty)
+                          ? [_contactActionBtn(
+                              icon: Icons.mail_rounded,
+                              label: 'Email',
+                              color: AppColors.primaryMid,
+                              onTap: () => _launchUrl(context, 'mailto:${_client.email}'),
+                            )]
+                          : [],
+                      onTap: (_client.email != null && _client.email!.isNotEmpty)
+                          ? () => _launchUrl(context, 'mailto:${_client.email}')
+                          : null,
+                      copyValue: _client.email ?? '',
+                    ),
+                    _tappableContactRow(
+                      icon: Symbols.call,
+                      value: _client.phone,
+                      label: 'Phone',
+                      color: AppColors.primary,
+                      actionButtons: _client.phone.isNotEmpty
+                          ? [
+                              _contactActionBtn(
+                                icon: Icons.call_rounded,
+                                label: 'Call',
+                                color: AppColors.primary,
+                                onTap: () => _launchUrl(
+                                  context,
+                                  'tel:${_client.phone.replaceAll(RegExp(r'[^\d+]'), '')}',
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              _contactActionBtn(
+                                icon: Icons.chat_rounded,
+                                label: 'WA',
+                                color: const Color(0xFF25D366),
+                                onTap: () => _launchUrl(
+                                  context,
+                                  'https://wa.me/${_client.phone.replaceAll(RegExp(r'[^\d+]'), '')}',
+                                ),
+                              ),
+                            ]
+                          : [],
+                      onTap: _client.phone.isNotEmpty
+                          ? () => _launchUrl(
+                              context,
+                              'tel:${_client.phone.replaceAll(RegExp(r'[^\d+]'), '')}',
+                            )
+                          : null,
+                      copyValue: _client.phone,
+                    ),
                     _infoRow(Symbols.location_city, _client.city ?? '—', 'City'),
                     _infoRow(Symbols.business, _client.companyName ?? '—', 'Company'),
                   ]),
@@ -376,17 +438,105 @@ class _ClientDetailPageState extends ConsumerState<ClientDetailPage> {
     );
   }
 
-  // Contact circle button in header (matches lead detail style)
-  Widget _contactCircle(IconData icon, VoidCallback onTap) {
+  // ── Tappable contact row with copy + action buttons ─────────────────────────
+  Widget _tappableContactRow({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+    required List<Widget> actionButtons,
+    VoidCallback? onTap,
+    String copyValue = '',
+  }) {
+    final isEmpty = value == '—' || value.isEmpty;
+    return InkWell(
+      onTap: onTap,
+      onLongPress: copyValue.isNotEmpty
+          ? () {
+              Clipboard.setData(ClipboardData(text: copyValue));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                content: Text('$label copied'),
+                behavior: SnackBarBehavior.floating,
+                duration: const Duration(seconds: 1),
+              ));
+            }
+          : null,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 36, height: 36,
+              decoration: BoxDecoration(
+                color: isEmpty ? AppColors.background : color.withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(11),
+              ),
+              child: Icon(icon,
+                  color: isEmpty ? AppColors.textLight : color, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(label,
+                    style: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500)),
+                const SizedBox(height: 2),
+                Text(value,
+                    style: TextStyle(
+                      color: isEmpty ? AppColors.textLight : color,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      decoration: (!isEmpty && onTap != null)
+                          ? TextDecoration.underline
+                          : null,
+                      decorationColor: color,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+              ]),
+            ),
+            if (actionButtons.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Row(mainAxisSize: MainAxisSize.min, children: actionButtons),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Labeled action button (icon + text) ─────────────────────────────────
+  Widget _contactActionBtn({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 38, height: 38,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
         decoration: BoxDecoration(
-          color: AppColors.textDark.withOpacity(0.18),
-          borderRadius: BorderRadius.circular(12),
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withValues(alpha: 0.28)),
         ),
-        child: Icon(icon, color: AppColors.textDark, size: 18),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: color, size: 14),
+            const SizedBox(width: 5),
+            Text(label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                )),
+          ],
+        ),
       ),
     );
   }
@@ -1304,6 +1454,130 @@ class _HistoryTile extends StatelessWidget {
               color: AppColors.textLight,
             ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Client Quick Contact Action Bar ──────────────────────────────────────────
+/// Premium card with action buttons for the Client Detail header.
+class _ClientContactBar extends StatelessWidget {
+  final String phone;
+  final String? email;
+  const _ClientContactBar({required this.phone, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+    final hasPhone = cleanPhone.isNotEmpty;
+    final hasEmail = email != null && email!.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLight.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.primarySoft.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          _HeroContactBtn(
+            icon: Icons.call_rounded,
+            label: 'Call',
+            color: AppColors.primary,
+            enabled: hasPhone,
+            onTap: hasPhone ? () => _launchUrl(context, 'tel:$cleanPhone') : null,
+          ),
+          const SizedBox(width: 8),
+          _HeroContactBtn(
+            icon: Icons.chat_rounded,
+            label: 'WhatsApp',
+            color: const Color(0xFF25D366),
+            enabled: hasPhone,
+            onTap: hasPhone
+                ? () => _launchUrl(context, 'https://wa.me/$cleanPhone')
+                : null,
+          ),
+          const SizedBox(width: 8),
+          _HeroContactBtn(
+            icon: Icons.mail_rounded,
+            label: 'Email',
+            color: AppColors.primaryMid,
+            enabled: hasEmail,
+            onTap: hasEmail ? () => _launchUrl(context, 'mailto:$email') : null,
+          ),
+          const SizedBox(width: 8),
+          _HeroContactBtn(
+            icon: Icons.sms_rounded,
+            label: 'SMS',
+            color: AppColors.primaryGlow,
+            enabled: hasPhone,
+            onTap: hasPhone ? () => _launchUrl(context, 'sms:$cleanPhone') : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Individual hero contact button shown inside _ClientContactBar.
+class _HeroContactBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool enabled;
+  final VoidCallback? onTap;
+  const _HeroContactBtn({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedOpacity(
+          opacity: enabled ? 1.0 : 0.3,
+          duration: const Duration(milliseconds: 200),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: enabled ? 0.13 : 0.06),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: color.withValues(alpha: enabled ? 0.35 : 0.15),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: color, size: 16),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: enabled ? color : AppColors.textLight,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

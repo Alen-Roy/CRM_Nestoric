@@ -15,9 +15,20 @@ class AttendanceRepository {
   }
 
   // ── Employee: check out ───────────────────────────────────────────────────
-  Future<void> checkOut(String attendanceId) async {
+  Future<void> checkOut(String attendanceId, {double? lat, double? lng}) async {
     await _col.doc(attendanceId).update({
       'checkOutTime': FieldValue.serverTimestamp(),
+      if (lat != null) 'checkOutLat': lat,
+      if (lng != null) 'checkOutLng': lng,
+    });
+  }
+
+  // ── Auto-checkout: silently patch a stale record in Firestore ─────────────
+  Future<void> autoCheckoutStale(AttendanceModel record) async {
+    if (record.id == null) return;
+    await _col.doc(record.id!).update({
+      'checkOutTime': Timestamp.fromDate(record.autoCheckoutTime),
+      'failedCheckout': true,
     });
   }
 
@@ -45,6 +56,10 @@ class AttendanceRepository {
               .map((d) => AttendanceModel.fromMap(d.data(), d.id))
               .toList();
           list.sort((a, b) => b.checkInTime.compareTo(a.checkInTime)); // newest first
+          // Lazy auto-checkout: patch any stale records in the background
+          for (final r in list) {
+            if (r.isAutoCheckout) autoCheckoutStale(r);
+          }
           return list;
         });
   }
@@ -68,6 +83,10 @@ class AttendanceRepository {
               .map((d) => AttendanceModel.fromMap(d.data(), d.id))
               .toList();
           list.sort((a, b) => a.checkInTime.compareTo(b.checkInTime)); // earliest first
+          // Lazy auto-checkout for any stale records
+          for (final r in list) {
+            if (r.isAutoCheckout) autoCheckoutStale(r);
+          }
           return list;
         });
   }

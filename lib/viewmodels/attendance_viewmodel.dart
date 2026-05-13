@@ -127,9 +127,19 @@ class AttendanceNotifier extends Notifier<AttendanceState> {
     if (record?.id == null) return 'No active check-in found.';
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      await _repo.checkOut(record!.id!);
+      final pos = await _getPosition();
+      await _repo.checkOut(
+        record!.id!,
+        lat: pos?.latitude,
+        lng: pos?.longitude,
+      );
       state = AttendanceState(
-        todayRecord: record.copyWith(checkOutTime: DateTime.now()));
+        todayRecord: record.copyWith(
+          checkOutTime: DateTime.now(),
+          checkOutLat:  pos?.latitude,
+          checkOutLng:  pos?.longitude,
+        ),
+      );
       return null;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: e.toString());
